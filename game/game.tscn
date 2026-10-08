@@ -1,0 +1,19 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/game.gd" id="1_game"]
+[ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://ui/touch_controls/touch_controls.tscn" id="4_touch"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu/pause_menu.tscn" id="5_pause"]
+
+[node name="Game" type="Node"]
+script = ExtResource("1_game")
+
+[node name="World" type="Node2D" parent="."]
+unique_name_in_owner = true
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="TouchControls" parent="." instance=ExtResource("4_touch")]
+unique_name_in_owner = true
+
+[node name="PauseMenu" parent="." instance=ExtResource("5_pause")]

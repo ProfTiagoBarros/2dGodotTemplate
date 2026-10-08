@@ -1,0 +1,76 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/platformer/player/platformer_player.gd" id="1_player"]
+[ext_resource type="Resource" path="res://game/platformer/player/default_platformer_stats.tres" id="2_stats"]
+[ext_resource type="Script" path="res://core/components/health_component.gd" id="3_health"]
+[ext_resource type="Script" path="res://core/components/hurtbox_component.gd" id="4_hurtbox"]
+[ext_resource type="Script" path="res://core/camera/game_camera.gd" id="5_camera"]
+[ext_resource type="Script" path="res://core/state_machine/state_machine.gd" id="6_fsm"]
+[ext_resource type="Script" path="res://game/platformer/player/states/idle_state.gd" id="7_idle"]
+[ext_resource type="Script" path="res://game/platformer/player/states/run_state.gd" id="8_run"]
+[ext_resource type="Script" path="res://game/platformer/player/states/jump_state.gd" id="9_jump"]
+[ext_resource type="Script" path="res://game/platformer/player/states/fall_state.gd" id="10_fall"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(12, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(10, 14)
+
+[node name="Player" type="CharacterBody2D" groups=["player"]]
+collision_layer = 2
+script = ExtResource("1_player")
+stats = ExtResource("2_stats")
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Body" type="Polygon2D" parent="Visual"]
+color = Color(0.36, 0.75, 0.95, 1)
+polygon = PackedVector2Array(-6, -16, 6, -16, 6, 0, -6, 0)
+
+[node name="Eye" type="Polygon2D" parent="Visual"]
+color = Color(0.1, 0.1, 0.15, 1)
+polygon = PackedVector2Array(1, -13, 4, -13, 4, -10, 1, -10)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -8)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("3_health")
+max_health = 5
+invulnerability_time = 0.8
+
+[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
+collision_layer = 16
+collision_mask = 8
+monitorable = false
+script = ExtResource("4_hurtbox")
+health = NodePath("../HealthComponent")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -8)
+shape = SubResource("RectangleShape2D_hurtbox")
+
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2(0, -24)
+process_callback = 0
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+script = ExtResource("5_camera")
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("6_fsm")
+initial_state = NodePath("Idle")
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("7_idle")
+
+[node name="Run" type="Node" parent="StateMachine"]
+script = ExtResource("8_run")
+
+[node name="Jump" type="Node" parent="StateMachine"]
+script = ExtResource("9_jump")
+
+[node name="Fall" type="Node" parent="StateMachine"]
+script = ExtResource("10_fall")

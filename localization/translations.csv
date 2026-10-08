@@ -1,0 +1,45 @@
+keys,en,pt_BR
+GAME_TITLE,Godot 2D Template,Template 2D Godot
+UI_PLAY,Play,Jogar
+UI_SETTINGS,Settings,Configurações
+UI_QUIT,Quit,Sair
+UI_RESUME,Resume,Continuar
+UI_PAUSED,Paused,Pausado
+UI_MAIN_MENU,Main Menu,Menu Principal
+UI_BACK,Back,Voltar
+UI_MASTER_VOLUME,Master Volume,Volume Geral
+UI_MUSIC_VOLUME,Music,Música
+UI_SFX_VOLUME,Effects,Efeitos
+UI_FULLSCREEN,Fullscreen,Tela Cheia
+UI_VSYNC,VSync,VSync
+UI_SCREEN_SHAKE,Screen Shake,Tremor de Tela
+UI_LANGUAGE,Language,Idioma
+UI_TOUCH_CONTROLS,Touch Controls,Controles de Toque
+UI_AUTO,Auto,Automático
+UI_ALWAYS,Always,Sempre
+UI_NEVER,Never,Nunca
+UI_HEALTH,HP,Vida
+UI_CONTROLS,Controls,Controles
+UI_KEYBOARD_MOUSE,Keyboard/Mouse,Teclado/Mouse
+UI_GAMEPAD,Gamepad,Controle
+UI_RESET_DEFAULTS,Reset Defaults,Restaurar Padrões
+UI_PRESS_KEY,Press a key or mouse button (Esc cancels),Pressione uma tecla ou botão do mouse (Esc cancela)
+UI_PRESS_BUTTON,Press a gamepad button (Esc cancels),Pressione um botão do controle (Esc cancela)
+INPUT_MOVE_UP,Move Up,Mover para Cima
+INPUT_MOVE_DOWN,Move Down,Mover para Baixo
+INPUT_MOVE_LEFT,Move Left,Mover para Esquerda
+INPUT_MOVE_RIGHT,Move Right,Mover para Direita
+INPUT_JUMP,Jump,Pular
+INPUT_ATTACK,Attack,Atacar
+INPUT_DASH,Dash,Dash
+INPUT_INTERACT,Interact,Interagir
+INPUT_PAUSE,Pause,Pausar
+INPUT_UNBOUND,—,—
+INPUT_MOUSE_LEFT,Left Click,Clique Esquerdo
+INPUT_MOUSE_RIGHT,Right Click,Clique Direito
+INPUT_MOUSE_MIDDLE,Middle Click,Clique do Meio
+INPUT_MOUSE_WHEEL_UP,Wheel Up,Roda para Cima
+INPUT_MOUSE_WHEEL_DOWN,Wheel Down,Roda para Baixo
+INPUT_MOUSE_X1,Mouse Back,Mouse Voltar
+INPUT_MOUSE_X2,Mouse Forward,Mouse Avançar
+INPUT_MOUSE_BUTTON,Mouse Button,Botão do Mouse

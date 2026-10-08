@@ -1,0 +1,163 @@
+name: CI
+
+# - Todo push/PR: importa o projeto e roda o smoke test.
+# - Tag "v*" (ex.: v1.2.0): exporta Windows, Linux, Web e Android e publica um Release.
+# - Execução manual (Actions > CI > Run workflow): exporta tudo, sem publicar Release.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.7.2"
+  GAME_SLUG: "godot-2d-template" # nome dos arquivos gerados; troque por jogo
+
+jobs:
+  test:
+    name: Smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-godot
+        with:
+          version: ${{ env.GODOT_VERSION }}
+
+      - name: Importar projeto
+        run: timeout 300 godot --headless --path . --import
+
+      - name: Smoke test
+        run: timeout 300 godot --headless --path . res://tests/smoke_test.tscn
+
+  export:
+    name: Export (${{ matrix.name }})
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            preset: Windows Desktop
+            file: game.exe
+          - name: linux
+            preset: Linux
+            file: game.x86_64
+          - name: web
+            preset: Web
+            file: index.html
+          - name: android
+            preset: Android
+            file: game.apk
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-godot
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          templates: "true"
+
+      - name: Versão a partir da tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i "s|^config/version=.*|config/version=\"$VERSION\"|" project.godot
+          sed -i "s|^version/name=.*|version/name=\"$VERSION\"|" export_presets.cfg
+          sed -i "s|^version/code=.*|version/code=${{ github.run_number }}|" export_presets.cfg
+
+      - name: Java (Android)
+        if: matrix.name == 'android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: SDK e keystores (Android)
+        if: matrix.name == 'android'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          # Caminhos do Java/Android SDK nas configurações do editor (nome muda por versão: X.Y).
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-${GODOT_VERSION%.*}.tres <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOF
+
+          # Keystore de debug (sempre gerada; usada quando não há keystore de release).
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/debug.keystore" -storetype pkcs12 \
+            -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
+          {
+            echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$RUNNER_TEMP/debug.keystore"
+            echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey"
+            echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android"
+          } >> "$GITHUB_ENV"
+
+          # Keystore de release vinda dos secrets do repositório (opcional).
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+            {
+              echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$RUNNER_TEMP/release.keystore"
+              echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KEYSTORE_ALIAS"
+              echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "ANDROID_RELEASE_SIGNING=1"
+            } >> "$GITHUB_ENV"
+          fi
+
+      - name: Importar projeto
+        run: timeout 300 godot --headless --path . --import
+
+      - name: Exportar
+        run: |
+          mkdir -p "build/${{ matrix.name }}"
+          MODE="--export-release"
+          # Sem keystore de release, o APK sai assinado em modo debug (instalável para testes).
+          if [ "${{ matrix.name }}" = "android" ] && [ -z "${ANDROID_RELEASE_SIGNING:-}" ]; then
+            MODE="--export-debug"
+          fi
+          timeout 900 godot --headless --path . $MODE "${{ matrix.preset }}" "build/${{ matrix.name }}/${{ matrix.file }}"
+          test -s "build/${{ matrix.name }}/${{ matrix.file }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.GAME_SLUG }}-${{ matrix.name }}
+          path: build/${{ matrix.name }}
+          if-no-files-found: error
+
+  release:
+    name: Publicar Release
+    needs: export
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Compactar builds
+        run: |
+          mkdir -p release
+          for dir in artifacts/*/; do
+            name="$(basename "$dir")"
+            (cd "$dir" && zip -qr "$GITHUB_WORKSPACE/release/$name-${GITHUB_REF_NAME}.zip" .)
+          done
+          ls -la release
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.zip
+          generate_release_notes: true

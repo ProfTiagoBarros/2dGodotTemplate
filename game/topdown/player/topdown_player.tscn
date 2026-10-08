@@ -1,0 +1,109 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/topdown/player/topdown_player.gd" id="1_player"]
+[ext_resource type="Resource" path="res://game/topdown/player/default_topdown_stats.tres" id="2_stats"]
+[ext_resource type="Script" path="res://core/components/health_component.gd" id="3_health"]
+[ext_resource type="Script" path="res://core/components/hurtbox_component.gd" id="4_hurtbox"]
+[ext_resource type="Script" path="res://core/components/hitbox_component.gd" id="5_hitbox"]
+[ext_resource type="Script" path="res://core/camera/game_camera.gd" id="6_camera"]
+[ext_resource type="Script" path="res://core/state_machine/state_machine.gd" id="7_fsm"]
+[ext_resource type="Script" path="res://game/topdown/player/states/idle_state.gd" id="8_idle"]
+[ext_resource type="Script" path="res://game/topdown/player/states/walk_state.gd" id="9_walk"]
+[ext_resource type="Script" path="res://game/topdown/player/states/dash_state.gd" id="10_dash"]
+[ext_resource type="Script" path="res://game/topdown/player/states/attack_state.gd" id="11_attack"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_feet"]
+radius = 5.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(10, 14)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
+size = Vector2(14, 18)
+
+[node name="Player" type="CharacterBody2D" groups=["player"]]
+collision_layer = 2
+collision_mask = 5
+motion_mode = 1
+script = ExtResource("1_player")
+stats = ExtResource("2_stats")
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Shadow" type="Polygon2D" parent="Visual"]
+color = Color(0, 0, 0, 0.3)
+polygon = PackedVector2Array(-7, 0, -5, -2, 0, -3, 5, -2, 7, 0, 5, 2, 0, 3, -5, 2)
+
+[node name="Body" type="Polygon2D" parent="Visual"]
+color = Color(0.36, 0.75, 0.95, 1)
+polygon = PackedVector2Array(-5, -14, 5, -14, 5, 0, -5, 0)
+
+[node name="Eye" type="Polygon2D" parent="Visual"]
+color = Color(0.1, 0.1, 0.15, 1)
+polygon = PackedVector2Array(1, -11, 4, -11, 4, -8, 1, -8)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -3)
+shape = SubResource("CircleShape2D_feet")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("3_health")
+max_health = 5
+invulnerability_time = 0.8
+
+[node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
+collision_layer = 16
+collision_mask = 8
+monitorable = false
+script = ExtResource("4_hurtbox")
+health = NodePath("../HealthComponent")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -7)
+shape = SubResource("RectangleShape2D_hurtbox")
+
+[node name="AttackPivot" type="Node2D" parent="."]
+position = Vector2(0, -7)
+
+[node name="AttackHitbox" type="Area2D" parent="AttackPivot"]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+script = ExtResource("5_hitbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackPivot/AttackHitbox"]
+position = Vector2(14, 0)
+shape = SubResource("RectangleShape2D_attack")
+disabled = true
+
+[node name="Slash" type="Polygon2D" parent="AttackPivot/AttackHitbox"]
+color = Color(1, 1, 1, 0.75)
+polygon = PackedVector2Array(8, -9, 16, -6, 20, 0, 16, 6, 8, 9, 13, 0)
+
+[node name="AimIndicator" type="Polygon2D" parent="AttackPivot"]
+visible = false
+color = Color(1, 0.85, 0.4, 0.8)
+polygon = PackedVector2Array(20, 0, 15, -3, 16, 0, 15, 3)
+
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2(0, -8)
+process_callback = 0
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+script = ExtResource("6_camera")
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("7_fsm")
+initial_state = NodePath("Idle")
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("8_idle")
+
+[node name="Walk" type="Node" parent="StateMachine"]
+script = ExtResource("9_walk")
+
+[node name="Dash" type="Node" parent="StateMachine"]
+script = ExtResource("10_dash")
+
+[node name="Attack" type="Node" parent="StateMachine"]
+script = ExtResource("11_attack")

@@ -1,0 +1,22 @@
+# Godot 4
+.godot/
+/android/
+
+# Exports
+/build/
+*.apk
+*.aab
+*.ipa
+
+# Assinatura Android: NUNCA versionar (no CI vem dos secrets)
+*.keystore
+*.jks
+
+# Saves temporários
+*.tmp
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,85 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/hud/hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://ui/components/safe_area_margin.gd" id="2_safe"]
+[ext_resource type="Script" path="res://ui/components/action_prompt_label.gd" id="3_prompt"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.05, 0.05, 0.08, 0.8)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
+bg_color = Color(0.92, 0.32, 0.38, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_safe")
+
+[node name="TopBar" type="HBoxContainer" parent="SafeArea"]
+layout_mode = 2
+size_flags_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="HealthLabel" type="Label" parent="SafeArea/TopBar"]
+layout_mode = 2
+text = "UI_HEALTH"
+
+[node name="HealthBar" type="ProgressBar" parent="SafeArea/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 10)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
+max_value = 5.0
+value = 5.0
+show_percentage = false
+
+[node name="Hints" type="VBoxContainer" parent="SafeArea"]
+modulate = Color(1, 1, 1, 0.7)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="JumpHint" type="Label" parent="SafeArea/Hints"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+script = ExtResource("3_prompt")
+action = &"jump"
+
+[node name="AttackHint" type="Label" parent="SafeArea/Hints"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+script = ExtResource("3_prompt")
+action = &"attack"
+
+[node name="DashHint" type="Label" parent="SafeArea/Hints"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+script = ExtResource("3_prompt")
+action = &"dash"
+
+[node name="PauseHint" type="Label" parent="SafeArea/Hints"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+script = ExtResource("3_prompt")
+action = &"pause"

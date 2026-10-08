@@ -1,0 +1,48 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/level.gd" id="1_level"]
+[ext_resource type="Script" path="res://game/world/solid_block.gd" id="2_block"]
+[ext_resource type="PackedScene" path="res://game/platformer/player/platformer_player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://game/hazards/damage_zone.tscn" id="4_hazard"]
+
+[node name="PlatformerLevel01" type="Node2D"]
+script = ExtResource("1_level")
+level_id = &"platformer_01"
+
+[node name="Geometry" type="Node2D" parent="."]
+
+[node name="Ground" type="StaticBody2D" parent="Geometry"]
+position = Vector2(400, 300)
+script = ExtResource("2_block")
+size = Vector2(1400, 40)
+
+[node name="WallLeft" type="StaticBody2D" parent="Geometry"]
+position = Vector2(-280, 140)
+script = ExtResource("2_block")
+size = Vector2(40, 360)
+
+[node name="WallRight" type="StaticBody2D" parent="Geometry"]
+position = Vector2(1080, 140)
+script = ExtResource("2_block")
+size = Vector2(40, 360)
+
+[node name="Platform1" type="StaticBody2D" parent="Geometry"]
+position = Vector2(260, 240)
+script = ExtResource("2_block")
+size = Vector2(96, 12)
+
+[node name="Platform2" type="StaticBody2D" parent="Geometry"]
+position = Vector2(400, 195)
+script = ExtResource("2_block")
+size = Vector2(96, 12)
+
+[node name="Platform3" type="StaticBody2D" parent="Geometry"]
+position = Vector2(700, 230)
+script = ExtResource("2_block")
+size = Vector2(128, 12)
+
+[node name="Spikes" parent="." instance=ExtResource("4_hazard")]
+position = Vector2(560, 280)
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+position = Vector2(100, 280)

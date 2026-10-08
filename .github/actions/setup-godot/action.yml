@@ -1,0 +1,54 @@
+name: Setup Godot
+description: Instala o Godot (Linux, headless) e, opcionalmente, os export templates, com cache.
+
+inputs:
+  version:
+    description: Versão do Godot (ex.: 4.7.2)
+    required: true
+  templates:
+    description: "Baixar também os export templates (~1,3 GB, ficam em cache)"
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Cache do Godot
+      uses: actions/cache@v4
+      with:
+        path: ~/godot-bin
+        key: godot-bin-${{ inputs.version }}
+
+    - name: Baixar Godot
+      shell: bash
+      run: |
+        if [ ! -x ~/godot-bin/godot ]; then
+          mkdir -p ~/godot-bin
+          curl -fsSL -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${{ inputs.version }}-stable/Godot_v${{ inputs.version }}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          mv "/tmp/godot/Godot_v${{ inputs.version }}-stable_linux.x86_64" ~/godot-bin/godot
+          chmod +x ~/godot-bin/godot
+        fi
+        echo "$HOME/godot-bin" >> "$GITHUB_PATH"
+
+    - name: Cache dos export templates
+      if: inputs.templates == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.local/share/godot/export_templates/${{ inputs.version }}.stable
+        key: godot-templates-${{ inputs.version }}
+
+    - name: Baixar export templates
+      if: inputs.templates == 'true'
+      shell: bash
+      run: |
+        DIR="$HOME/.local/share/godot/export_templates/${{ inputs.version }}.stable"
+        if [ ! -f "$DIR/version.txt" ]; then
+          mkdir -p "$DIR"
+          curl -fsSL -o /tmp/templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${{ inputs.version }}-stable/Godot_v${{ inputs.version }}-stable_export_templates.tpz"
+          unzip -q /tmp/templates.tpz -d /tmp/templates
+          mv /tmp/templates/templates/* "$DIR/"
+          rm -rf /tmp/templates /tmp/templates.tpz
+        fi
