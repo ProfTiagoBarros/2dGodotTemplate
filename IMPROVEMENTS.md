@@ -5,7 +5,7 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 ## 1. Build, exportação e CI
 
 - [x] ~~Export presets Windows/Linux/Web/Android~~, ~~GitHub Actions (teste + export + Release)~~ e ~~versionamento pela tag~~: implementados (veja "CI, builds e releases" no README).
-- [ ] **Primeira execução real do CI**: o workflow foi validado localmente (presets reconhecidos, scripts de shell simulados), mas só roda de verdade no GitHub. Na primeira tag, conferir principalmente o job Android (SDK/Java do runner).
+- [x] ~~Primeira execução real do CI~~: validada no GitHub (smoke test + export das 4 plataformas OK em ~2 min).
 - [ ] **macOS e iOS**: exigem runner macOS, assinatura e notarização da Apple (conta paga de desenvolvedor).
 - [ ] **Deploy automático**: itch.io via `butler` (secret `BUTLER_API_KEY`, canais `windows`/`linux`/`web`/`android`) e Play Store via `r0adkll/upload-google-play` (AAB + conta de serviço).
 - [ ] **Android para a loja**: build **AAB** (exige `gradle_build/use_gradle_build=true` e o template Android instalado no projeto), ícones adaptativos (`launcher_icons/*`), splash e revisão do `target SDK`.
