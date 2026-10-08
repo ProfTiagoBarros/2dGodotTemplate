@@ -28,6 +28,7 @@ CI lives in `.github/workflows/ci.yml`; it uses the composite action `.github/ac
 - Keep `GODOT_VERSION` in the workflow equal to the editor version.
 - Android signing comes only from env vars (`GODOT_ANDROID_KEYSTORE_*`). The CI generates a debug keystore and uses a release keystore only when repo secrets exist.
 - Editor settings in 4.7 live in `editor_settings-4.7.tres` (named by `major.minor`).
+- Before committing workflow changes, lint them with **actionlint**. It's not installed globally. Get it from the rhysd/actionlint releases (verify the checksum) and run `actionlint -no-color -oneline` at the repo root. It also parses the local composite action. Quote any YAML value that contains `: `: an unquoted `description: ... (ex.: 4.7.2)` broke the first CI run.
 - Locally there are no export templates or Java, so presets can only be validated: `--export-release "<preset>"` fails with "template not found" for valid presets and with "Invalid export preset name" for invalid ones.
 
 Tests must run as a **scene**, not with `-s script.gd`. In `-s` mode autoload identifiers (`EventBus`, `Settings`…) aren't available at compile time, so any script touching them fails to compile. The setup CLI works with `-s` only because `tools/genre_setup.gd` has no autoload or game dependencies. Keep it that way.
