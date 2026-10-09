@@ -16,16 +16,25 @@ const GENRE_SUITES: Array[String] = [
 
 const TEST_SLOT := 98
 
+## Nomes das cenas de efeito (OneShotEffect) criadas desde o último clear().
+var spawned_effects: Array[String] = []
+## Quantos hitstops começaram desde o último reset.
+var hitstop_count := 0
+
 var _failures := 0
 var _checks := 0
 
 
 func _ready() -> void:
+	get_tree().node_added.connect(_on_node_added)
+	GameFeel.hitstop_started.connect(func(_duration: float) -> void: hitstop_count += 1)
+
 	_test_save_system()
 	# Slot de teste: autosaves (ex.: AbilityPickup) não tocam o save real do jogador.
 	SaveSystem.new_game(TEST_SLOT)
 	await _test_input_bindings()
 	await _test_debug_tools()
+	await _test_game_feel()
 
 	var suites_run := 0
 	for path: String in GENRE_SUITES:
@@ -213,6 +222,63 @@ func _test_debug_tools() -> void:
 	check(ScenePaths.FIRST_LEVEL.get_file().get_basename() in DebugTools.execute("level"), "level lista as fases")
 	check("não encontrada" in DebugTools.execute("level fase_inexistente"), "level avisa fase inexistente")
 	await despawn(game)
+
+
+func _test_game_feel() -> void:
+	print("\n== game_feel ==")
+	var hitstop_setting: Variant = Settings.get_value("game", "hitstop")
+
+	# Hitstop: desacelera e restaura sozinho (tempo real).
+	Settings.set_value("game", "hitstop", true)
+	GameFeel.hitstop(0.1)
+	check(GameFeel.is_hitstop_active() and Engine.time_scale < 0.2, "Hitstop desacelera o jogo")
+	await real_seconds(0.2)
+	check(not GameFeel.is_hitstop_active() and is_equal_approx(Engine.time_scale, 1.0), "Hitstop restaura o time_scale")
+	Settings.set_value("game", "hitstop", false)
+	GameFeel.hitstop(0.1)
+	check(is_equal_approx(Engine.time_scale, 1.0), "Opção 'Pausa de Impacto' desligada ignora o hitstop")
+	Settings.set_value("game", "hitstop", hitstop_setting)
+
+	# Squash & stretch: conserva a área e volta ao normal.
+	var squash := SquashStretch.new()
+	add_child(squash)
+	squash.stretch_vertical(1.3)
+	check(squash.scale.y > 1.25 and is_equal_approx(squash.scale.x * squash.scale.y, 1.0),
+			"Squash & stretch conserva a área (sx·sy = 1)")
+	await real_seconds(0.3)
+	check(squash.scale.is_equal_approx(Vector2.ONE), "Squash volta ao normal")
+	squash.queue_free()
+
+	# Hit flash: material no alvo, filhos herdam, pisca e apaga.
+	var target := Node2D.new()
+	var body := Polygon2D.new()
+	target.add_child(body)
+	add_child(target)
+	var flash := HitFlashComponent.new()
+	flash.target = target
+	add_child(flash)
+	check(target.material is ShaderMaterial and body.use_parent_material, "Hit flash aplica o shader no visual")
+	flash.flash()
+	check(is_equal_approx(flash.get_amount(), 1.0), "Hit flash acende no frame do impacto")
+	await real_seconds(0.25)
+	check(is_zero_approx(flash.get_amount()), "Hit flash apaga sozinho")
+	target.queue_free()
+	flash.queue_free()
+
+	# Efeitos de partícula: surgem na cena e se liberam sozinhos.
+	var effect := GameFeel.spawn_effect(GameFeel.DUST, Vector2(10.0, 10.0))
+	check(effect is OneShotEffect and effect.is_inside_tree(), "Efeito de partícula surge na cena")
+	await real_seconds(0.7)
+	check(not is_instance_valid(effect), "Efeito se libera ao terminar")
+
+
+func real_seconds(seconds: float) -> void:
+	await get_tree().create_timer(seconds, true, false, true).timeout
+
+
+func _on_node_added(node: Node) -> void:
+	if node is OneShotEffect:
+		spawned_effects.append(node.scene_file_path.get_file().get_basename())
 
 
 func key_event(keycode: Key) -> InputEventKey:

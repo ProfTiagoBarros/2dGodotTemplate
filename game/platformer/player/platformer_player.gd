@@ -29,8 +29,11 @@ var attack_direction := Vector2.RIGHT
 var _attacking := false
 var _attack_cooldown_left := 0.0
 var _dash_cooldown_left := 0.0
+var _was_on_floor := true
+var _peak_fall_speed := 0.0
 
 @onready var visual: Node2D = $Visual
+@onready var squash: SquashStretch = $Visual/Squash
 @onready var health: HealthComponent = $HealthComponent
 @onready var state_machine: StateMachine = $StateMachine
 @onready var attack_pivot: Node2D = $AttackPivot
@@ -60,8 +63,13 @@ func _physics_process(delta: float) -> void:
 	if is_on_floor():
 		coyote_timer = stats.coyote_time
 		_refill_air_resources()
+		if not _was_on_floor:
+			_on_landed(_peak_fall_speed)
+		_peak_fall_speed = 0.0
 	else:
 		coyote_timer = maxf(coyote_timer - delta, 0.0)
+		_peak_fall_speed = maxf(_peak_fall_speed, velocity.y)
+	_was_on_floor = is_on_floor()
 	_attack_cooldown_left = maxf(_attack_cooldown_left - delta, 0.0)
 	_dash_cooldown_left = maxf(_dash_cooldown_left - delta, 0.0)
 
@@ -117,11 +125,15 @@ func can_any_jump() -> bool:
 
 
 func jump() -> void:
-	if not can_jump():
+	var from_ground := can_jump()
+	if not from_ground:
 		air_jumps_left = maxi(air_jumps_left - 1, 0)
 	velocity.y = -stats.jump_velocity
 	jump_buffer_timer = 0.0
 	coyote_timer = 0.0
+	squash.stretch_vertical(1.3)
+	if from_ground:
+		GameFeel.spawn_effect(GameFeel.DUST, global_position)
 
 #endregion
 
@@ -179,7 +191,10 @@ func start_dash() -> float:
 	face(direction)
 	if not is_on_floor():
 		air_dashes_left -= 1
+	else:
+		GameFeel.spawn_effect(GameFeel.DUST, global_position)
 	velocity = Vector2(direction * stats.dash_speed, 0.0)
+	squash.stretch_horizontal(1.35)
 	if stats.dash_invulnerable:
 		health.grant_invulnerability(stats.dash_duration)
 	return direction
@@ -254,15 +269,24 @@ func _on_damaged(_amount: int, source: Node) -> void:
 		if away != 0.0:
 			direction = away
 	velocity = Vector2(knockback.x * direction, knockback.y)
+	# Flash: HitFlashComponent. Aqui: impacto "médio-grande".
 	EventBus.camera_shake_requested.emit(0.5)
+	GameFeel.hitstop(0.08)
 
-	var tween := create_tween()
-	tween.tween_property(visual, "modulate", Color(1.0, 0.3, 0.3), 0.05)
-	tween.tween_property(visual, "modulate", Color.WHITE, 0.3)
+
+## Aterrissagem: squash proporcional à velocidade da queda (0..max_fall_speed).
+func _on_landed(fall_speed: float) -> void:
+	var impact := clampf(fall_speed / stats.max_fall_speed, 0.0, 1.0)
+	if impact < 0.25:
+		return
+	squash.stretch_horizontal(1.0 + 0.4 * impact)
+	GameFeel.spawn_effect(GameFeel.DUST, global_position)
 
 
 func _on_attack_landed(_hurtbox: HurtboxComponent) -> void:
 	EventBus.camera_shake_requested.emit(0.15)
+	GameFeel.hitstop(0.05)
+	GameFeel.spawn_effect(GameFeel.HIT_SPARKS, _attack_shape.global_position)
 	# Pogo: acertar algo com o ataque para baixo quica e recarrega pulo/dash no ar.
 	if attack_direction == Vector2.DOWN:
 		velocity.y = -stats.pogo_velocity

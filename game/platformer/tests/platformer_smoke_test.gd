@@ -17,7 +17,49 @@ func run(t: SmokeTest) -> void:
 	await _test_attacks(t, game, player)
 	await _test_dash(t, player)
 	await _test_abilities(t, game, player)
+	await _test_game_feel(t, game, player)
 	await t.despawn(game)
+
+
+func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
+	# Pulo: estica e solta poeira.
+	await _place(t, player, Vector2(150.0, 280.0))
+	t.spawned_effects.clear()
+	await t.tap(&"jump")
+	await t.frames(2)
+	t.check(player.squash.scale.y > 1.05, "Pulo estica o personagem (stretch)")
+	t.check("dust_puff" in t.spawned_effects, "Pulo solta poeira")
+	await t.frames(80)
+
+	# Aterrissagem de uma queda alta: achata proporcional ao impacto.
+	await _place(t, player, Vector2(150.0, 100.0))
+	for i in 120:
+		await t.frames(1)
+		if player.is_on_floor():
+			break
+	t.spawned_effects.clear()
+	await t.frames(1)
+	t.check(player.squash.scale.x > 1.05, "Aterrissagem achata o personagem (squash)")
+	t.check("dust_puff" in t.spawned_effects, "Aterrissagem solta poeira")
+	await t.frames(30)
+
+	# Golpe acertando: hitstop + faíscas + flash no alvo.
+	var dummy := game.find_child("TrainingDummy", true, false) as Node2D
+	var dummy_flash := dummy.get_node("HitFlash") as HitFlashComponent
+	await _place(t, player, dummy.global_position + Vector2(-16.0, 0.0))
+	player.face(1.0)
+	t.spawned_effects.clear()
+	var hitstops_before := t.hitstop_count
+	await t.tap(&"attack")
+	for i in 6:
+		await t.frames(1)
+		if t.hitstop_count > hitstops_before:
+			break
+	t.check(t.hitstop_count > hitstops_before, "Golpe que acerta causa hitstop")
+	t.check(dummy_flash.get_amount() > 0.5, "Alvo pisca branco ao levar o golpe")
+	await t.frames(3)
+	t.check("hit_sparks" in t.spawned_effects, "Golpe que acerta solta faíscas")
+	await t.frames(30)
 
 
 func _test_movement(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:

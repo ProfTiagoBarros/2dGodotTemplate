@@ -25,6 +25,7 @@ const DEFAULTS := {
 	"game": {
 		"locale": "", # "" = idioma do sistema
 		"screen_shake": true,
+		"hitstop": true,
 		"touch_controls": "auto", # auto | always | never
 	},
 }

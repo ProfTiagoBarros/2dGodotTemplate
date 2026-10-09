@@ -13,6 +13,8 @@
 [ext_resource type="Script" path="res://game/platformer/player/states/attack_state.gd" id="11_attack"]
 [ext_resource type="Script" path="res://game/platformer/player/states/dash_state.gd" id="12_dash"]
 [ext_resource type="Script" path="res://core/components/hitbox_component.gd" id="13_hitbox"]
+[ext_resource type="Script" path="res://core/feel/squash_stretch.gd" id="14_squash"]
+[ext_resource type="Script" path="res://core/feel/hit_flash_component.gd" id="15_flash"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 16)
@@ -30,11 +32,14 @@ stats = ExtResource("2_stats")
 
 [node name="Visual" type="Node2D" parent="."]
 
-[node name="Body" type="Polygon2D" parent="Visual"]
+[node name="Squash" type="Node2D" parent="Visual"]
+script = ExtResource("14_squash")
+
+[node name="Body" type="Polygon2D" parent="Visual/Squash"]
 color = Color(0.36, 0.75, 0.95, 1)
 polygon = PackedVector2Array(-6, -16, 6, -16, 6, 0, -6, 0)
 
-[node name="Eye" type="Polygon2D" parent="Visual"]
+[node name="Eye" type="Polygon2D" parent="Visual/Squash"]
 color = Color(0.1, 0.1, 0.15, 1)
 polygon = PackedVector2Array(1, -13, 4, -13, 4, -10, 1, -10)
 
@@ -46,6 +51,11 @@ shape = SubResource("RectangleShape2D_body")
 script = ExtResource("3_health")
 max_health = 5
 invulnerability_time = 0.8
+
+[node name="HitFlash" type="Node" parent="." node_paths=PackedStringArray("target", "health")]
+script = ExtResource("15_flash")
+target = NodePath("../Visual/Squash")
+health = NodePath("../HealthComponent")
 
 [node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
 collision_layer = 16

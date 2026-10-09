@@ -47,3 +47,4 @@ ABILITY_UNLOCKED,%s unlocked!,%s desbloqueado!
 ABILITY_ATTACK,Attack,Ataque
 ABILITY_DASH,Dash,Dash
 ABILITY_DOUBLE_JUMP,Double Jump,Pulo duplo
+UI_HITSTOP,Hit Stop,Pausa de Impacto

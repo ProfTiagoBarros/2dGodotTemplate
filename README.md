@@ -107,6 +107,7 @@ core/          Código reutilizável e agnóstico de jogo/gênero
   utils/         MathUtils, PlatformUtils
   constants/     ScenePaths, PhysicsLayers
   debug/         ConsoleLogger (captura a saída do engine para o console)
+  feel/          HitFlashComponent, SquashStretch, shader de flash, efeitos de partícula
 game/          Conteúdo do jogo, organizado POR FEATURE
   game.tscn      Cena de gameplay (qualquer gênero): fase + HUD + toque + pausa
   level.gd       Level: contrato (classe base) de toda fase
@@ -140,10 +141,29 @@ tools/         Setup de gênero (rode uma vez e pode apagar)
 | `Settings` | Opções do usuário em `user://settings.cfg` (áudio, vídeo, idioma, toque) |
 | `SaveSystem` | Save JSON versionado, escrita atômica + `.bak`, migração por versão |
 | `AudioManager` | Música com crossfade, pool de SFX, SFX posicional |
+| `GameFeel` | Hitstop e efeitos de partícula pontuais (poeira, faíscas) |
 | `InputManager` | Detecta o dispositivo ativo (teclado/mouse, gamepad, toque) e se o mouse está em uso |
 | `InputBindings` | Remapeamento de controles, persistência dos atalhos e nomes/dicas de botões |
 | `SceneLoader` | Troca de cena com fade e carregamento em thread |
 | `DebugTools` | Overlay F3, console F1 e registro de comandos/watches. **Só em debug builds** |
+
+### Kit de game feel ("juice")
+
+Peças genéricas em `core/feel/` e no autoload `GameFeel`, usadas pelos dois gêneros:
+
+| Peça | Como usar | Onde já está ligada |
+|---|---|---|
+| **Hitstop** | `GameFeel.hitstop(0.05)`. Congela por tempo **real** e restaura o `time_scale` anterior; chamadas sobrepostas estendem o fim | Golpe que acerta (0,05 s), player levando dano (0,08 s) |
+| **Hit flash** | Nó `HitFlashComponent` com `target` (o visual) e `health`. Pisca branco via shader quando há dano | Players e alvo de treino |
+| **Squash & stretch** | Nó `SquashStretch` entre o nó do flip e o desenho: `stretch_vertical(1.3)` / `stretch_horizontal(1.3)`. **Conserva a área** (sx·sy = 1) e volta com uma "mola" | Pulo, aterrissagem (proporcional à queda), dash |
+| **Partículas** | `GameFeel.spawn_effect(GameFeel.DUST, posição)`. `CPUParticles2D` de disparo único que se liberam sozinhas | Poeira (pulo, aterrissagem, dash) e faíscas (golpe que acerta) |
+| **Screen shake** | `EventBus.camera_shake_requested.emit(0.4)` (já existia) | Dano e golpes |
+
+A estrutura do visual dos personagens é `Visual` (faz o flip com `scale.x = ±1`) → `Squash` (deforma e pisca) → desenhos. A sombra fica fora do `Squash`, então não deforma nem pisca.
+
+**Dosagem:** impactos pequenos levam flash e faísca; médios, também hitstop curto; grandes, também shake. Exagerar tudo em todo golpe cansa. O jogador pode desligar o hitstop em *Configurações → Pausa de Impacto* e o tremor em *Tremor de Tela*.
+
+`GameFeel.hitstop_started(duration)` é emitido a cada hitstop, para sincronizar som e vibração do controle.
 
 ### Ferramentas de debug
 

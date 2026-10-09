@@ -56,9 +56,9 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 
 ## 6. Game feel ("juice")
 
-- [ ] **Hitstop** (congelar alguns frames ao acertar): `Engine.time_scale` por curto período.
-- [ ] **Squash & stretch** no pulo e na aterrissagem (em um nó filho do `Visual`, para não conflitar com o flip de direção).
-- [ ] Partículas (`GPUParticles2D`/`CPUParticles2D`; a CPU é mais segura no renderer Compatibility) para poeira, impacto e morte.
+- [x] ~~Hitstop, hit flash (shader), squash & stretch e partículas (poeira/faíscas)~~: implementados (`GameFeel`, `core/feel/`).
+- [ ] **Mais juice**: partículas de morte/explosão, rastro (ghost trail) no dash, knockback nos inimigos, "freeze + zoom" em golpes finais, vibração do controle (`Input.start_joy_vibration`) sincronizada com `GameFeel.hitstop_started`, e sons de impacto.
+- [ ] **Pooling de efeitos** se o jogo spawnar muitas partículas por frame (hoje cada efeito é instanciado e liberado).
 - [ ] **Transições de cena com shader** (dissolve/wipe) no `SceneLoader` e **tela de loading** com barra usando `SceneLoader.load_progress`.
 
 ## 7. UI e acessibilidade

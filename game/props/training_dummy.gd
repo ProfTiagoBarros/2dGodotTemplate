@@ -15,10 +15,9 @@ func _ready() -> void:
 
 
 func _on_damaged(_amount: int, _source: Node) -> void:
-	_visual.modulate = Color(1.0, 0.4, 0.4)
+	# O flash branco vem do HitFlashComponent; aqui só o "balanço" do boneco.
 	_visual.scale = Vector2(1.25, 0.8)
-	var tween := create_tween().set_parallel()
-	tween.tween_property(_visual, "modulate", Color.WHITE, 0.2)
+	var tween := create_tween()
 	tween.tween_property(_visual, "scale", Vector2.ONE, 0.25) \
 			.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 

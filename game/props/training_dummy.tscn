@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://game/props/training_dummy.gd" id="1_dummy"]
 [ext_resource type="Script" path="res://core/components/health_component.gd" id="2_health"]
 [ext_resource type="Script" path="res://core/components/hurtbox_component.gd" id="3_hurtbox"]
+[ext_resource type="Script" path="res://core/feel/hit_flash_component.gd" id="4_flash"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_feet"]
 size = Vector2(12, 6)
@@ -25,17 +26,24 @@ shape = SubResource("RectangleShape2D_feet")
 color = Color(0, 0, 0, 0.3)
 polygon = PackedVector2Array(-8, 0, -6, -2, 0, -3, 6, -2, 8, 0, 6, 2, 0, 3, -6, 2)
 
-[node name="Body" type="Polygon2D" parent="Visual"]
+[node name="Sprite" type="Node2D" parent="Visual"]
+
+[node name="Body" type="Polygon2D" parent="Visual/Sprite"]
 color = Color(0.76, 0.56, 0.36, 1)
 polygon = PackedVector2Array(-6, -22, 6, -22, 6, 0, -6, 0)
 
-[node name="Band" type="Polygon2D" parent="Visual"]
+[node name="Band" type="Polygon2D" parent="Visual/Sprite"]
 color = Color(0.92, 0.32, 0.38, 1)
 polygon = PackedVector2Array(-6, -15, 6, -15, 6, -12, -6, -12)
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_health")
 invulnerability_time = 0.25
+
+[node name="HitFlash" type="Node" parent="." node_paths=PackedStringArray("target", "health")]
+script = ExtResource("4_flash")
+target = NodePath("../Visual/Sprite")
+health = NodePath("../HealthComponent")
 
 [node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
 collision_layer = 16

@@ -39,10 +39,13 @@ func run(t: SmokeTest) -> void:
 	# Dash: desloca rápido e concede i-frames.
 	player.face(Vector2.LEFT)
 	var before_dash := player.global_position
+	t.spawned_effects.clear()
 	await t.tap(&"dash")
 	await t.frames(2) # o sinal physics_frame vem ANTES dos nós processarem
 	t.check(player.state_machine.current_state.name == &"Dash", "Estado Dash ativo")
 	t.check(player.health.is_invulnerable(), "Dash concede invencibilidade")
+	t.check(not player.squash.scale.is_equal_approx(Vector2.ONE) and "dust_puff" in t.spawned_effects,
+			"Dash estica o personagem e solta poeira")
 	await t.frames(13)
 	t.check(before_dash.x - player.global_position.x > 30.0, "Dash desloca o player")
 	t.check(not player.can_dash(), "Dash entra em cooldown")
@@ -57,9 +60,11 @@ func run(t: SmokeTest) -> void:
 	var player_health := player.health.current
 	var dummy_before := dummy_health.current
 	await t.frames(2)
+	t.spawned_effects.clear()
 	await t.tap(&"attack")
 	await t.frames(8)
 	t.check(dummy_health.current < dummy_before, "Ataque causa dano no dummy")
+	t.check("hit_sparks" in t.spawned_effects, "Golpe que acerta solta faíscas")
 	t.check(player.health.current == player_health, "Ataque não fere o próprio player")
 	await t.frames(15)
 	t.check(player.state_machine.current_state.name == &"Idle", "Volta a Idle após o ataque")

@@ -19,6 +19,7 @@ const CONTROLS_MENU := preload("res://ui/controls_menu/controls_menu.tscn")
 @onready var _vsync_label: Label = %VsyncLabel
 @onready var _vsync_check: CheckButton = %VsyncCheck
 @onready var _shake_check: CheckButton = %ShakeCheck
+@onready var _hitstop_check: CheckButton = %HitstopCheck
 @onready var _language_option: OptionButton = %LanguageOption
 @onready var _touch_option: OptionButton = %TouchOption
 @onready var _controls_button: Button = %ControlsButton
@@ -38,6 +39,7 @@ func _ready() -> void:
 	_bind_check(_fullscreen_check, "video", "fullscreen")
 	_bind_check(_vsync_check, "video", "vsync")
 	_bind_check(_shake_check, "game", "screen_shake")
+	_bind_check(_hitstop_check, "game", "hitstop")
 
 	_bind_option(_language_option, "locale", LOCALES, LOCALE_NAMES)
 	_bind_option(_touch_option, "touch_controls", TOUCH_MODES, TOUCH_MODE_NAMES)

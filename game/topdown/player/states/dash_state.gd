@@ -12,6 +12,12 @@ func enter(_previous: StringName, _data: Dictionary = {}) -> void:
 	player.face(direction)
 	player.velocity = direction.normalized() * player.stats.dash_speed
 	player.health.grant_invulnerability(player.stats.dash_duration)
+	# Squash só deforma em x/y: estica no eixo dominante da direção do dash.
+	if absf(direction.x) >= absf(direction.y):
+		player.squash.stretch_horizontal(1.3)
+	else:
+		player.squash.stretch_vertical(1.3)
+	GameFeel.spawn_effect(GameFeel.DUST, player.global_position)
 	_time_left = player.stats.dash_duration
 
 

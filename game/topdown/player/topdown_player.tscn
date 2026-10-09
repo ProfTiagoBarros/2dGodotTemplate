@@ -11,6 +11,8 @@
 [ext_resource type="Script" path="res://game/topdown/player/states/walk_state.gd" id="9_walk"]
 [ext_resource type="Script" path="res://game/topdown/player/states/dash_state.gd" id="10_dash"]
 [ext_resource type="Script" path="res://game/topdown/player/states/attack_state.gd" id="11_attack"]
+[ext_resource type="Script" path="res://core/feel/squash_stretch.gd" id="12_squash"]
+[ext_resource type="Script" path="res://core/feel/hit_flash_component.gd" id="13_flash"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_feet"]
 radius = 5.0
@@ -34,11 +36,14 @@ stats = ExtResource("2_stats")
 color = Color(0, 0, 0, 0.3)
 polygon = PackedVector2Array(-7, 0, -5, -2, 0, -3, 5, -2, 7, 0, 5, 2, 0, 3, -5, 2)
 
-[node name="Body" type="Polygon2D" parent="Visual"]
+[node name="Squash" type="Node2D" parent="Visual"]
+script = ExtResource("12_squash")
+
+[node name="Body" type="Polygon2D" parent="Visual/Squash"]
 color = Color(0.36, 0.75, 0.95, 1)
 polygon = PackedVector2Array(-5, -14, 5, -14, 5, 0, -5, 0)
 
-[node name="Eye" type="Polygon2D" parent="Visual"]
+[node name="Eye" type="Polygon2D" parent="Visual/Squash"]
 color = Color(0.1, 0.1, 0.15, 1)
 polygon = PackedVector2Array(1, -11, 4, -11, 4, -8, 1, -8)
 
@@ -50,6 +55,11 @@ shape = SubResource("CircleShape2D_feet")
 script = ExtResource("3_health")
 max_health = 5
 invulnerability_time = 0.8
+
+[node name="HitFlash" type="Node" parent="." node_paths=PackedStringArray("target", "health")]
+script = ExtResource("13_flash")
+target = NodePath("../Visual/Squash")
+health = NodePath("../HealthComponent")
 
 [node name="Hurtbox" type="Area2D" parent="." node_paths=PackedStringArray("health")]
 collision_layer = 16

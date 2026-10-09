@@ -22,6 +22,7 @@ var _dash_cooldown_left := 0.0
 var _attacking := false
 
 @onready var visual: Node2D = $Visual
+@onready var squash: SquashStretch = $Visual/Squash
 @onready var health: HealthComponent = $HealthComponent
 @onready var state_machine: StateMachine = $StateMachine
 @onready var attack_pivot: Node2D = $AttackPivot
@@ -126,14 +127,13 @@ func _on_damaged(_amount: int, source: Node) -> void:
 			away = offset.normalized()
 	velocity = away * stats.knockback_speed
 	EventBus.camera_shake_requested.emit(0.5)
-
-	var tween := create_tween()
-	tween.tween_property(visual, "modulate", Color(1.0, 0.3, 0.3), 0.05)
-	tween.tween_property(visual, "modulate", Color.WHITE, 0.3)
+	GameFeel.hitstop(0.08)
 
 
 func _on_attack_landed(_hurtbox: HurtboxComponent) -> void:
 	EventBus.camera_shake_requested.emit(0.2)
+	GameFeel.hitstop(0.05)
+	GameFeel.spawn_effect(GameFeel.HIT_SPARKS, _attack_shape.global_position)
 
 
 func _on_died() -> void:
