@@ -15,8 +15,17 @@ signal hit_received(hitbox: HitboxComponent)
 @export var team: StringName = &""
 
 
+func _ready() -> void:
+	# Performance: só processa enquanto algo sobrepõe (dorme no resto do tempo).
+	set_physics_process(false)
+	area_entered.connect(_on_area_entered)
+
+
 func _physics_process(_delta: float) -> void:
-	if health == null or health.is_invulnerable() or not has_overlapping_areas():
+	if not has_overlapping_areas():
+		set_physics_process(false)
+		return
+	if health == null or health.is_invulnerable():
 		return
 	for area: Area2D in get_overlapping_areas():
 		var hitbox := area as HitboxComponent
@@ -26,6 +35,10 @@ func _physics_process(_delta: float) -> void:
 			hit_received.emit(hitbox)
 			hitbox.hit_landed.emit(self)
 			return
+
+
+func _on_area_entered(_area: Area2D) -> void:
+	set_physics_process(true)
 
 
 func can_be_hit_by(hitbox: HitboxComponent) -> bool:

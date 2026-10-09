@@ -94,3 +94,10 @@ The smoke test remaps bindings, so it snapshots and restores the player's real b
 - When moving scripts on disk, move their `.gd.uid` files too.
 - Physics interpolation is on. Cameras use `process_callback = 0` (physics).
 - Renderer is GL Compatibility with a 640×360 base, `canvas_items` + `expand` stretch, and nearest filtering.
+
+## Security and performance rules
+
+- **Never call `ConfigFile.load/parse`, `str_to_var` or `bytes_to_var` on untrusted data** (anything in `user://`, downloaded or player-shared). They construct objects and load scripts from text, so a tampered `settings.cfg` executed code; this was proven with an exploit test. Use `SafeConfig.load_file/parse` (`core/utils/safe_config.gd`), which rejects `Object(`, `Resource(`, `ExtResource(` and `SubResource(`, then validate types with `Settings.is_valid_value`. Saves are JSON, which is safe from code execution but still untrusted: type-check values, e.g. with `SaveSystem.get_int()`.
+- Don't put `${{ inputs.* }}` or other expressions directly in `run:` scripts; pass them via `env:`. Keep `permissions: contents: read` at the workflow level. Pin third-party actions by commit SHA (Dependabot keeps them updated). Godot downloads are verified against the release's `SHA512-SUMS.txt`.
+- `HurtboxComponent` sleeps until `area_entered` and goes back to sleep when nothing overlaps. Don't add per-frame logic that assumes it always processes.
+- Enemy perception runs every `perception_interval` (0.1 s, random phase per enemy). Tests that expect detection must wait at least that long: use `_wait_for` and avoid checks pinned to an exact frame.

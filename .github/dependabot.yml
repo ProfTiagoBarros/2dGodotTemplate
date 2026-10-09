@@ -1,0 +1,14 @@
+# Abre PRs mensais atualizando as actions do CI (inclusive as fixadas por
+# commit/SHA, como softprops/action-gh-release). Revise e faça merge se o
+# smoke test passar.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/.github/actions/setup-godot"
+    schedule:
+      interval: "monthly"
+    groups:
+      actions:
+        patterns: ["*"]

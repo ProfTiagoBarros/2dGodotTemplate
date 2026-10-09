@@ -12,6 +12,9 @@ extends CharacterBody2D
 signal target_changed(target: Node2D)
 
 @export var stats: EnemyStats
+## Intervalo entre checagens de percepção (s). O raycast de linha de visão é a
+## parte cara; 10 Hz é imperceptível e funciona como "tempo de reação".
+@export var perception_interval := 0.1
 
 ## Player perseguido no momento (null = nenhum).
 var target: Node2D
@@ -19,6 +22,8 @@ var facing := Vector2.RIGHT
 
 var _attacking := false
 var _windup_tween: Tween
+# Começa em fase aleatória: espalha os raycasts dos inimigos entre frames.
+var _perception_cooldown := randf() * 0.1
 
 @onready var visual: Node2D = $Visual
 @onready var squash: SquashStretch = $Visual/Squash
@@ -38,9 +43,12 @@ func _ready() -> void:
 	set_attack_active(false)
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	# Antes da StateMachine (pai antes dos filhos): estados veem o alvo atual.
-	update_target()
+	_perception_cooldown -= delta
+	if _perception_cooldown <= 0.0:
+		_perception_cooldown += perception_interval
+		update_target()
 
 
 #region Percepção

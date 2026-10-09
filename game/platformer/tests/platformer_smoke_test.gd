@@ -58,9 +58,9 @@ func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	var states: Array[StringName] = []
 	walker.state_machine.state_changed.connect(func(_from: StringName, to: StringName) -> void: states.append(to))
 	await _place(t, player, walker.global_position + Vector2(90.0, 0.0))
-	await t.frames(5)
-	t.check(walker.state_machine.current_state.name == &"Chase" and walker.velocity.x > 0.0,
-			"Ver o player faz o inimigo perseguir")
+	# Percepção roda a ~10 Hz: até 0,1 s de "tempo de reação".
+	var is_chasing := func() -> bool: return walker.state_machine.current_state.name == &"Chase" and walker.velocity.x > 0.0
+	t.check(await _wait_for(t, is_chasing, 20), "Ver o player faz o inimigo perseguir")
 	var health_before := player.health.current
 	for i in 150:
 		await t.frames(1)
@@ -162,9 +162,12 @@ func _test_movement(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	t.check(player.global_position.x > start_x + 5.0, "Player anda para a direita")
 
 	var health_before := player.health.current
+	var hurtbox := player.get_node("Hurtbox") as HurtboxComponent
+	t.check(not hurtbox.is_physics_processing(), "Hurtbox dorme sem contato (performance)")
 	var spikes := game.find_child("Spikes", true, false) as Node2D
 	await _place(t, player, spikes.global_position + Vector2(0.0, -2.0))
 	t.check(player.health.current < health_before, "Espinhos causam dano")
+	t.check(hurtbox.is_physics_processing(), "Hurtbox acorda ao entrar em contato")
 	await t.frames(50) # i-frames + knockback
 
 

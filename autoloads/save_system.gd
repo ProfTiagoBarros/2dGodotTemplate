@@ -73,12 +73,24 @@ func load_game(slot: int = 0) -> bool:
 		return false
 
 	payload = _migrate(payload)
-	data = payload.get("data", {}) as Dictionary
+	# Save é entrada NÃO confiável (pode ser editado à mão): valide os tipos.
+	var loaded: Variant = payload.get("data", {})
+	if not loaded is Dictionary:
+		Log.warn("SaveSystem: campo 'data' inválido no slot %d" % slot)
+		return false
+	data = loaded
 	current_slot = slot
 	get_tree().call_group(PERSIST_GROUP, &"load_state", data)
 	Log.debug("SaveSystem: slot %d carregado" % slot)
 	game_loaded.emit(slot)
 	return true
+
+
+## Lê um número inteiro de `data` com segurança (JSON guarda números como
+## float, e um save editado pode trazer texto/listas no lugar).
+func get_int(key: String, default: int = 0) -> int:
+	var value: Variant = data.get(key, default)
+	return int(value) if value is int or value is float else default
 
 
 func delete_save(slot: int = 0) -> void:

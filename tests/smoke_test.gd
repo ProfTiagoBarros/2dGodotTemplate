@@ -35,6 +35,7 @@ func _ready() -> void:
 	await _test_input_bindings()
 	await _test_debug_tools()
 	await _test_game_feel()
+	_test_security()
 
 	var suites_run := 0
 	for path: String in GENRE_SUITES:
@@ -270,6 +271,34 @@ func _test_game_feel() -> void:
 	check(effect is OneShotEffect and effect.is_inside_tree(), "Efeito de partícula surge na cena")
 	await real_seconds(0.7)
 	check(not is_instance_valid(effect), "Efeito se libera ao terminar")
+
+
+func _test_security() -> void:
+	print("\n== security ==")
+	# settings.cfg adulterado: ConfigFile criaria objetos e rodaria scripts.
+	var evil := '[game]\nlocale=Object(RefCounted,"script":Resource("res://tests/smoke_test.gd"))\n'
+	check(SafeConfig.parse(evil) == null, "Config com Object(...)/Resource(...) é recusada")
+	check(SafeConfig.parse('[game]\nx = ExtResource ("1")\n') == null, "Variações com espaço também são recusadas")
+	var valid := SafeConfig.parse('[audio]\nMusic=0.5\n[game]\nlocale="pt_BR"\n')
+	check(valid != null and is_equal_approx(float(valid.get_value("audio", "Music")), 0.5), "Config válida carrega normalmente")
+	check(Settings.is_valid_value("audio", "Music", 1) and not Settings.is_valid_value("video", "fullscreen", "sim")
+			and not Settings.is_valid_value("game", "chave_desconhecida", true), "Settings só aceita chaves conhecidas com o tipo certo")
+
+	# Save adulterado/corrompido: tipos errados não podem derrubar o jogo.
+	var slot := TEST_SLOT + 1
+	var path := "%s/slot_%d.json" % [SaveSystem.SAVE_DIR, slot]
+	_write_text(path, '{"version": 1, "data": [1, 2, 3]}')
+	check(not SaveSystem.load_game(slot), "Save com 'data' de tipo errado é recusado")
+	_write_text(path, '{"version": 1, "data": {"deaths": "muitas"}}')
+	check(SaveSystem.load_game(slot) and SaveSystem.get_int("deaths") == 0, "Campo numérico adulterado vira o padrão")
+	SaveSystem.delete_save(slot)
+	SaveSystem.new_game(TEST_SLOT)
+
+
+func _write_text(path: String, text: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(text)
+	file.close()
 
 
 func real_seconds(seconds: float) -> void:

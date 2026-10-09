@@ -256,28 +256,39 @@ static func _deserialize(data: Variant) -> InputEvent:
 		"key":
 			var key := InputEventKey.new()
 			key.device = -1
-			key.physical_keycode = int(dict.get("physical_keycode", KEY_NONE)) as Key
+			key.physical_keycode = _int(dict, "physical_keycode", KEY_NONE) as Key
 			if key.physical_keycode == KEY_NONE:
-				key.keycode = int(dict.get("keycode", KEY_NONE)) as Key
+				key.keycode = _int(dict, "keycode", KEY_NONE) as Key
 			return key
 		"mouse_button":
 			# Só o mouse REAL: ignora cliques emulados pelo toque (DEVICE_ID_EMULATION).
 			var mouse := InputEventMouseButton.new()
 			mouse.device = InputEvent.DEVICE_ID_MOUSE
-			mouse.button_index = int(dict.get("button_index", MOUSE_BUTTON_LEFT)) as MouseButton
+			mouse.button_index = _int(dict, "button_index", MOUSE_BUTTON_LEFT) as MouseButton
 			return mouse
 		"joy_button":
 			var button := InputEventJoypadButton.new()
 			button.device = -1
-			button.button_index = int(dict.get("button_index", 0)) as JoyButton
+			button.button_index = _int(dict, "button_index", 0) as JoyButton
 			return button
 		"joy_motion":
 			var motion := InputEventJoypadMotion.new()
 			motion.device = -1
-			motion.axis = int(dict.get("axis", 0)) as JoyAxis
-			motion.axis_value = signf(float(dict.get("axis_value", 1.0)))
+			motion.axis = _int(dict, "axis", 0) as JoyAxis
+			motion.axis_value = signf(_float(dict, "axis_value", 1.0))
 			return motion
 	return null
+
+
+## Leitura tolerante: o settings.cfg pode ter sido editado à mão.
+static func _int(dict: Dictionary, key: String, default: int) -> int:
+	var value: Variant = dict.get(key, default)
+	return int(value) if value is int or value is float else default
+
+
+static func _float(dict: Dictionary, key: String, default: float) -> float:
+	var value: Variant = dict.get(key, default)
+	return float(value) if value is int or value is float else default
 
 
 ## Cópia "limpa" do evento capturado: sem modificadores, sem estado, device correto.

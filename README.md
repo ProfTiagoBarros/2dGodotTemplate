@@ -292,6 +292,31 @@ As fases de exemplo têm 2 inimigos cada. No overlay F3, o watch "Inimigos" most
 
 Use `PhysicsLayers.HITBOXES` etc. no código em vez de números mágicos.
 
+## Segurança e performance
+
+### Dados de fora são não confiáveis
+
+Arquivos em `user://` (configurações, saves) podem ser editados pelo jogador ou trocados entre pessoas, em mods ou "packs" baixados. Regras do template:
+
+- **Nunca use `ConfigFile.load()`, `str_to_var()` ou `bytes_to_var()` com objetos em dados de fora.** O parser do Godot constrói objetos e **carrega scripts** a partir do texto (`Object(...)`, `Resource("...")`), ou seja, executa código. O `settings.cfg` é lido por **`SafeConfig`** (`core/utils/`), que recusa esses construtores antes do parse. Os valores ainda passam por `Settings.is_valid_value` (só chaves conhecidas, com o tipo certo, e volume limitado a 0–1).
+- **Saves em JSON:** o parser de JSON só produz tipos primitivos. Mesmo assim, valide os tipos ao ler: `SaveSystem` recusa `data` que não seja dicionário, e `SaveSystem.get_int("chave")` devolve o padrão se o valor foi adulterado.
+- **Builds de debug não são para distribuir:** eles têm console e cheats. O CI marca o APK sem keystore de release como `...-android-debug`.
+
+### CI
+
+- **Permissões mínimas:** o token só lê o repositório, e apenas o job de Release pede escrita.
+- **Godot e export templates verificados por SHA-512** contra o `SHA512-SUMS.txt` oficial do release.
+- **Action de terceiros fixada por commit.** O **Dependabot** (`.github/dependabot.yml`) abre PRs mensais com as atualizações.
+- **Tags validadas:** só `vX.Y.Z` (semver) é aceita antes de virar versão.
+- **Secrets protegidos:** só são usados nos jobs de tag e manuais. PRs de forks não têm acesso a eles.
+
+### Performance
+
+- **Hurtboxes dormem** (`set_physics_process(false)`) e só acordam quando algo entra na área.
+- **Percepção dos inimigos a ~10 Hz** (`perception_interval`), com fase aleatória por inimigo: os raycasts de linha de visão se espalham entre frames em vez de rodarem todos a cada frame.
+- **Partículas em CPU** (`CPUParticles2D`) e renderer Compatibility, que é o mais leve para celular e web.
+- **Ferramentas de debug** e captura de log não carregam em builds de release.
+
 ## PC + Mobile
 
 - **Resolução base 640×360** (16:9, escala inteira para 720p/1080p/1440p/4K), stretch `canvas_items` + aspect `expand`: celulares 19.5:9 mostram mais mundo em vez de barras pretas.

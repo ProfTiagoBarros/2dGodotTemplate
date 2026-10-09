@@ -78,13 +78,31 @@ func _load() -> void:
 
 	if not FileAccess.file_exists(PATH):
 		return
-	var saved := ConfigFile.new()
-	if saved.load(PATH) != OK:
-		Log.warn("Settings: arquivo corrompido, usando padrões.")
+	# NUNCA ConfigFile.load() direto em user://: pode executar código (ver SafeConfig).
+	var saved := SafeConfig.load_file(PATH)
+	if saved == null:
+		Log.warn("Settings: arquivo inválido ou inseguro, usando padrões.")
 		return
 	for section: String in saved.get_sections():
 		for key: String in saved.get_section_keys(section):
-			_config.set_value(section, key, saved.get_value(section, key))
+			var value: Variant = saved.get_value(section, key)
+			if is_valid_value(section, key, value):
+				_config.set_value(section, key, value)
+			else:
+				Log.warn("Settings: valor ignorado [%s] %s" % [section, key])
+
+
+## Aceita só chaves conhecidas com o tipo do valor padrão (int vale onde se
+## espera float). A seção "input" (atalhos remapeados) aceita listas; o
+## conteúdo é validado pelo InputBindings.
+func is_valid_value(section: String, key: String, value: Variant) -> bool:
+	if section == "input":
+		return value is Array
+	var section_defaults: Dictionary = DEFAULTS.get(section, {})
+	if not section_defaults.has(key):
+		return false
+	var expected := typeof(section_defaults[key])
+	return typeof(value) == expected or (expected == TYPE_FLOAT and value is int)
 
 
 func _apply(section: String, key: String, value: Variant) -> void:
@@ -92,7 +110,7 @@ func _apply(section: String, key: String, value: Variant) -> void:
 		"audio":
 			var bus := AudioServer.get_bus_index(key)
 			if bus != -1:
-				AudioServer.set_bus_volume_linear(bus, float(value))
+				AudioServer.set_bus_volume_linear(bus, clampf(float(value), 0.0, 1.0))
 		"video":
 			_apply_video(key, value)
 		"game":

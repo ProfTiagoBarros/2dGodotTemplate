@@ -71,7 +71,9 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 
 ## 8. Persistência
 
-- [ ] **Criptografia** opcional dos saves (`FileAccess.open_encrypted_with_pass`) para jogos com economia/ranking.
+- [x] ~~Leitura segura de configurações e saves~~ (`SafeConfig`, validação de tipos, `SaveSystem.get_int`): implementada na revisão de segurança.
+- [ ] **Integridade dos saves** para jogos com ranking/economia: assinatura HMAC (`HMACContext` + chave embutida) para detectar edição, ou criptografia (`FileAccess.open_encrypted_with_pass`). Num jogo single-player, editar o próprio save geralmente é aceitável.
+- [ ] **Limite de tamanho** ao ler saves/configurações (ex.: recusar arquivos > 1 MB) para evitar travamentos com arquivos gigantes.
 - [ ] **Cloud save**: Steam Cloud, Google Play Saved Games, iCloud.
 - [ ] **Autosave** em checkpoints e em `NOTIFICATION_APPLICATION_PAUSED` (mobile pode matar o app em segundo plano).
 - [ ] Metadados do slot (tempo de jogo, fase, screenshot miniatura).

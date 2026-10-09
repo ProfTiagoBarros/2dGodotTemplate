@@ -1,5 +1,5 @@
 name: Setup Godot
-description: Instala o Godot (Linux, headless) e, opcionalmente, os export templates, com cache.
+description: Instala o Godot (Linux, headless) e, opcionalmente, os export templates, com cache e verificação SHA-512.
 
 inputs:
   version:
@@ -19,15 +19,23 @@ runs:
         path: ~/godot-bin
         key: godot-bin-${{ inputs.version }}
 
-    - name: Baixar Godot
+    - name: Baixar Godot (com verificação SHA-512)
       shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
       run: |
+        set -euo pipefail
         if [ ! -x ~/godot-bin/godot ]; then
+          BASE="https://github.com/godotengine/godot/releases/download/${VERSION}-stable"
+          FILE="Godot_v${VERSION}-stable_linux.x86_64.zip"
+          cd "$RUNNER_TEMP"
+          curl -fsSL -o SHA512-SUMS.txt "$BASE/SHA512-SUMS.txt"
+          curl -fsSL -o "$FILE" "$BASE/$FILE"
+          # Falha o job se o arquivo não bater com o checksum oficial do release.
+          grep -E " [ *]${FILE}\$" SHA512-SUMS.txt | sha512sum -c -
           mkdir -p ~/godot-bin
-          curl -fsSL -o /tmp/godot.zip \
-            "https://github.com/godotengine/godot/releases/download/${{ inputs.version }}-stable/Godot_v${{ inputs.version }}-stable_linux.x86_64.zip"
-          unzip -q /tmp/godot.zip -d /tmp/godot
-          mv "/tmp/godot/Godot_v${{ inputs.version }}-stable_linux.x86_64" ~/godot-bin/godot
+          unzip -q "$FILE" -d godot
+          mv "godot/Godot_v${VERSION}-stable_linux.x86_64" ~/godot-bin/godot
           chmod +x ~/godot-bin/godot
         fi
         echo "$HOME/godot-bin" >> "$GITHUB_PATH"
@@ -39,16 +47,23 @@ runs:
         path: ~/.local/share/godot/export_templates/${{ inputs.version }}.stable
         key: godot-templates-${{ inputs.version }}
 
-    - name: Baixar export templates
+    - name: Baixar export templates (com verificação SHA-512)
       if: inputs.templates == 'true'
       shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
       run: |
-        DIR="$HOME/.local/share/godot/export_templates/${{ inputs.version }}.stable"
+        set -euo pipefail
+        DIR="$HOME/.local/share/godot/export_templates/${VERSION}.stable"
         if [ ! -f "$DIR/version.txt" ]; then
+          BASE="https://github.com/godotengine/godot/releases/download/${VERSION}-stable"
+          FILE="Godot_v${VERSION}-stable_export_templates.tpz"
+          cd "$RUNNER_TEMP"
+          curl -fsSL -o SHA512-SUMS.txt "$BASE/SHA512-SUMS.txt"
+          curl -fsSL -o "$FILE" "$BASE/$FILE"
+          grep -E " [ *]${FILE}\$" SHA512-SUMS.txt | sha512sum -c -
           mkdir -p "$DIR"
-          curl -fsSL -o /tmp/templates.tpz \
-            "https://github.com/godotengine/godot/releases/download/${{ inputs.version }}-stable/Godot_v${{ inputs.version }}-stable_export_templates.tpz"
-          unzip -q /tmp/templates.tpz -d /tmp/templates
-          mv /tmp/templates/templates/* "$DIR/"
-          rm -rf /tmp/templates /tmp/templates.tpz
+          unzip -q "$FILE" -d templates
+          mv templates/templates/* "$DIR/"
+          rm -rf templates "$FILE"
         fi

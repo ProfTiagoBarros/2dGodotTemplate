@@ -32,7 +32,7 @@ func _ready() -> void:
 
 func _on_player_died() -> void:
 	# Exemplo de uso do SaveSystem: contador de mortes persistente.
-	SaveSystem.data["deaths"] = int(SaveSystem.data.get("deaths", 0)) + 1
+	SaveSystem.data["deaths"] = SaveSystem.get_int("deaths") + 1
 	SaveSystem.save_game()
 	await get_tree().create_timer(respawn_delay, false).timeout
 	SceneLoader.reload_current_scene()

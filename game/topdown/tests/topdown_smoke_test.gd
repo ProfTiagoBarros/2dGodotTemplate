@@ -130,7 +130,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: TopDownPlayer) -> void:
 	slime.global_position = Vector2(480.0, 250.0)
 	var states: Array[StringName] = []
 	slime.state_machine.state_changed.connect(func(_from: StringName, to: StringName) -> void: states.append(to))
-	await t.frames(5)
+	await t.frames(12) # percepção a ~10 Hz + aceleração
 
 	# Persegue em 2D (nos dois eixos) e ataca com aviso.
 	t.check(slime.state_machine.current_state.name == &"Chase", "Slime vê o player e persegue")
