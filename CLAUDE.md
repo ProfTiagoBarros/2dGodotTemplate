@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Godot **4.7** 2D game template (GDScript only, no 3D) targeting PC and mobile. It ships two **genre modules**, `game/platformer/` (side-scrolling) and `game/topdown/`, on top of a shared base. A one-time setup script keeps one module and trashes the other. User-facing docs, comments and UI translation values are in **Brazilian Portuguese**; identifiers are English. `README.md` explains the architecture, and `IMPROVEMENTS.md` is the backlog of features that are deliberately not implemented yet. Update it when you implement or add one of those items.
 
+Docs are bilingual: `README.md`/`MANUAL.md` (Portuguese, primary) and `README.en.md`/`MANUAL.en.md` (English). Any doc change must be made in both languages and keep the language switchers and cross-file anchors valid. Record user-visible changes under *Não lançado* in `CHANGELOG.md` (Keep a Changelog, SemVer). The project is MIT-licensed. The README states that the template was developed with AI assistance (Claude, by Anthropic); keep that disclosure and the `Co-Authored-By` trailers. Community files: `CONTRIBUTING.md`, `SECURITY.md` (private vulnerability reporting), `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.github/CODEOWNERS`, `.github/release.yml`.
+
 ## Commands
 
 Godot is installed at `C:\Godot\Godot.exe`. The `_console.exe` wrapper there is broken because it looks for a differently named main exe. Godot is a GUI-subsystem app, so pass `--log-file <path>` to capture output.

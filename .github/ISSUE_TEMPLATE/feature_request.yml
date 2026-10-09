@@ -1,0 +1,33 @@
+name: "✨ Sugestão / Feature request"
+description: "Ideia de melhoria para o template / Improvement idea for the template"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Veja antes o IMPROVEMENTS.md: a ideia pode já estar no backlog.
+        Check IMPROVEMENTS.md first: the idea may already be in the backlog.
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Qual problema isso resolve? / What problem does it solve?"
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposta / Proposal"
+      description: "Como deveria funcionar? Em qual parte (core/, game/, ui/, CI)? / How should it work? Which part (core/, game/, ui/, CI)?"
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: "Escopo / Scope"
+      options:
+        - "Genérico (todos os jogos) / Generic (every game)"
+        - "Platformer / metroidvania"
+        - "Top-down"
+        - "Ferramentas, CI ou documentação / Tooling, CI or docs"
+    validations:
+      required: true

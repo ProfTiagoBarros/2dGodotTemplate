@@ -1,0 +1,7 @@
+# Revisor padrão de todos os PRs. Em jogos criados a partir do template,
+# troque pelo seu usuário ou equipe.
+* @ProfTiagoBarros
+
+# Mudanças no CI e em leitura de dados externos merecem atenção extra.
+/.github/ @ProfTiagoBarros
+/core/utils/safe_config.gd @ProfTiagoBarros

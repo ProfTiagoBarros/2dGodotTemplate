@@ -1,0 +1,63 @@
+name: "🐞 Bug"
+description: "Algo não funciona como deveria / Something doesn't work as expected"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar! Para **vulnerabilidades de segurança**, não use este formulário: veja o SECURITY.md.
+        Thanks for reporting! For **security vulnerabilities**, don't use this form: see SECURITY.md.
+  - type: textarea
+    id: description
+    attributes:
+      label: "O que aconteceu? / What happened?"
+      description: "Descreva o problema e o que você esperava. / Describe the problem and what you expected."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Passos para reproduzir / Steps to reproduce"
+      placeholder: |
+        1. Abrir a fase... / Open the level...
+        2. Apertar... / Press...
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: genre
+    attributes:
+      label: "Gênero / Genre"
+      options:
+        - "Platformer"
+        - "Top-down"
+        - "Ambos / Both"
+        - "Não se aplica / N/A"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "Plataforma / Platform"
+      multiple: true
+      options:
+        - "Editor"
+        - "Windows"
+        - "Linux"
+        - "macOS"
+        - "Web"
+        - "Android"
+        - "iOS"
+  - type: input
+    id: godot
+    attributes:
+      label: "Versão do Godot / Godot version"
+      placeholder: "4.7.2"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Log / console (F1)"
+      description: "Saída do console de debug (F1) ou do editor, se houver. / Debug console (F1) or editor output, if any."
+      render: text

@@ -1,6 +1,10 @@
 # Manual do Godot 2D Template
 
+**Português** · [English](MANUAL.en.md)
+
 Guia prático para começar um jogo novo a partir do template, fazer as modificações iniciais e aproveitar bem o que já vem pronto. Para detalhes técnicos de cada sistema, o [README](README.md) é a referência; este manual foca no **como usar**.
+
+> 🤖 Template e manual desenvolvidos com assistência de IA (**Claude**, da Anthropic), com revisão e testes do autor. Detalhes em [Créditos e uso de IA](README.md#créditos-e-uso-de-ia).
 
 ## Índice
 
@@ -120,6 +124,10 @@ Faça isto logo no começo, porque alguns desses valores são difíceis de mudar
 | **Nome do app Android** | `export_presets.cfg` → `package/name` | Nome que aparece no celular |
 | **Nome dos arquivos de build** | `.github/workflows/ci.yml` → `GAME_SLUG` | Ex.: `meu-metroidvania` |
 | **README do jogo** | `README.md` | Troque a descrição do topo pela do seu jogo. Mantenha `MANUAL.md` e `CLAUDE.md` como referência |
+| **Badges e links** | Topo de `README.md` e `README.en.md` | Troque `ProfTiagoBarros/2dGodotTemplate` pelo seu repositório (badge do CI) |
+| **Licença do jogo** | `LICENSE` | O template é MIT. Seu jogo pode ter outra licença (ou nenhuma, se for fechado); mantenha o aviso de copyright do template num arquivo de licenças de terceiros ou nos créditos |
+| **Histórico** | `CHANGELOG.md` | Comece um histórico novo para o jogo, apagando as entradas do template |
+| **Revisor de PRs** | `.github/CODEOWNERS` | Troque `@ProfTiagoBarros` pelo seu usuário ou equipe |
 | **Resolução base** | *Project Settings → Display → Window* | Padrão 640×360 (pixel art). Para arte HD use 1280×720 e mude o filtro de textura para *Linear* |
 | **Orientação no celular** | *Project Settings → Display → Window → Handheld* | Padrão paisagem. Para jogos em pé, use `sensor_portrait` e ajuste a resolução base |
 
@@ -246,7 +254,7 @@ func load_state(data: Dictionary) -> void:
 ```
 
 - Chame `SaveSystem.save_game()` nos momentos certos: checkpoint, item coletado, troca de fase.
-- O JSON converte números inteiros em decimais, então use `int(...)` ao ler.
+- O JSON converte números inteiros em decimais, então use `int(...)` ao ler. Para valores que o jogador poderia adulterar, prefira `SaveSystem.get_int("chave")`, que também trata tipos errados.
 - Mudou o formato do save depois de lançar? Aumente `SAVE_VERSION` e trate a conversão em `_migrate()` (`autoloads/save_system.gd`).
 
 ### 5.7 Textos e idiomas
@@ -357,7 +365,7 @@ Helpers disponíveis em `t`:
 ### Testando no celular
 
 1. Rode o workflow manualmente (*Actions → CI → Run workflow*) ou crie uma tag.
-2. Baixe o artifact `...-android` e instale o `.apk` no celular. É preciso permitir a instalação de fontes desconhecidas.
+2. Baixe o artifact `...-android-debug` (ou `...-android`, se você configurou a keystore de release) e instale o `.apk` no celular. É preciso permitir a instalação de fontes desconhecidas.
 3. O APK de teste é um build de debug: o console de 3 dedos funciona e mostra os erros.
 
 ---
@@ -415,6 +423,7 @@ O build Web roda em qualquer hospedagem estática. No itch.io, envie o `.zip` do
 - **Composição:** antes de criar herança nova, veja se dá para resolver com os componentes que já existem (`HealthComponent`, `Hitbox`/`Hurtbox`, `HitFlashComponent`, `SquashStretch`).
 - **Data-driven:** números de design ficam em `.tres`, não espalhados no código.
 - **Sempre ações, nunca teclas:** isso mantém o remapeamento, o gamepad e o toque funcionando de graça.
+- **Dados de fora não são confiáveis:** nunca use `ConfigFile.load()`/`str_to_var()` em arquivos que o jogador pode editar. Use `SafeConfig` e valide os tipos (veja "Segurança e performance" no [README](README.md#segurança-e-performance)).
 
 ### Usando o Claude Code no seu jogo
 
@@ -475,7 +484,7 @@ git cherry-pick <hash-do-commit>
 - [ ] Nome do projeto, `GAME_TITLE`, ícone, versão inicial
 - [ ] `package/unique_name` e `package/name` do Android
 - [ ] `GAME_SLUG` no CI
-- [ ] README com a descrição do jogo
+- [ ] README com a descrição do jogo, badges, `LICENSE`, `CHANGELOG.md` e `CODEOWNERS` do jogo
 - [ ] Primeiro commit e push → CI verde na aba Actions
 - [ ] (Se for publicar no Android) keystore de release + 3 secrets no GitHub
 - [ ] Primeira fase própria em `ScenePaths.FIRST_LEVEL`

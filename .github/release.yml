@@ -1,0 +1,19 @@
+# Organiza as notas geradas automaticamente nos Releases (generate_release_notes)
+# pelas labels dos PRs.
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+  categories:
+    - title: "🔒 Segurança / Security"
+      labels: ["security"]
+    - title: "✨ Novidades / Features"
+      labels: ["enhancement"]
+    - title: "🐞 Correções / Fixes"
+      labels: ["bug"]
+    - title: "📘 Documentação / Docs"
+      labels: ["documentation"]
+    - title: "⬆️ Dependências / Dependencies"
+      labels: ["dependencies", "github_actions"]
+    - title: "Outros / Other"
+      labels: ["*"]

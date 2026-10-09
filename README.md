@@ -1,10 +1,19 @@
 # Godot 2D Template
 
+**Português** · [English](README.en.md)
+
+[![CI](https://github.com/ProfTiagoBarros/2dGodotTemplate/actions/workflows/ci.yml/badge.svg)](https://github.com/ProfTiagoBarros/2dGodotTemplate/actions/workflows/ci.yml)
+[![Godot 4.7](https://img.shields.io/badge/Godot-4.7-478CBF?logo=godotengine&logoColor=white)](https://godotengine.org)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-green.svg)](LICENSE)
+[![Desenvolvido com Claude](https://img.shields.io/badge/desenvolvido%20com-Claude%20(Anthropic)-D97757)](#créditos-e-uso-de-ia)
+
 Template base para jogos **2D** em **Godot 4.7+**, pensado para **PC e celular** ao mesmo tempo, com arquitetura modular e padrões recomendados pela documentação oficial e pela comunidade indie. Traz dois **módulos de gênero**, **side-scrolling (platformer)** e **top-down**, sobre a mesma base.
 
 > 📘 **Primeira vez usando o template?** Comece pelo **[MANUAL.md](MANUAL.md)**: passo a passo para criar um jogo novo, fazer as modificações iniciais, construir fases, inimigos e habilidades, publicar builds, e dicas para aproveitar tudo.
 >
-> O que ainda não foi implementado está descrito em [IMPROVEMENTS.md](IMPROVEMENTS.md).
+> O que ainda não foi implementado está descrito em [IMPROVEMENTS.md](IMPROVEMENTS.md). O histórico de versões fica no [CHANGELOG.md](CHANGELOG.md).
+>
+> 🤖 Este template foi desenvolvido **com assistência de IA (Claude, da Anthropic)**. Veja [Créditos e uso de IA](#créditos-e-uso-de-ia).
 
 ## Começando um jogo novo
 
@@ -106,7 +115,7 @@ core/          Código reutilizável e agnóstico de jogo/gênero
   components/    HealthComponent, HitboxComponent, HurtboxComponent
   state_machine/ StateMachine + State (FSM baseada em nós)
   camera/        GameCamera (screen shake por trauma)
-  utils/         MathUtils, PlatformUtils
+  utils/         MathUtils, PlatformUtils, SafeConfig
   constants/     ScenePaths, PhysicsLayers
   debug/         ConsoleLogger (captura a saída do engine para o console)
   feel/          HitFlashComponent, SquashStretch, shader de flash, efeitos de partícula
@@ -118,8 +127,8 @@ game/          Conteúdo do jogo, organizado POR FEATURE
   props/         TrainingDummy (alvo de treino), AbilityPickup (item de habilidade)
   enemies/       Enemy (base genérica), EnemyStats e estados de IA compartilhados
   world/         SolidBlock (greybox)
-  platformer/    MÓDULO side-scrolling: player, estados, stats, fase, testes
-  topdown/       MÓDULO top-down: player, estados, stats, pilar, fase, testes
+  platformer/    MÓDULO side-scrolling: player, estados, stats, inimigo, fase, testes
+  topdown/       MÓDULO top-down: player, estados, stats, inimigo, pilar, fase, testes
 ui/            main_menu/ pause_menu/ settings_menu/ controls_menu/ hud/ touch_controls/
   components/    SafeAreaMargin (notch), ActionPromptLabel (dica de botão)
   debug/         DebugOverlay (F3) e DebugConsole (F1)
@@ -346,3 +355,21 @@ Arquivos em `user://` (configurações, saves) podem ser editados pelo jogador o
 - **Nova opção de configuração**: adicione o padrão em `Settings.DEFAULTS`, trate em `Settings._apply` e crie o controle em `settings_menu`.
 - **Novo texto**: adicione uma linha em `translations.csv` e use a chave no `text` do Control.
 - **Novo módulo de gênero** (ex.: twin-stick, puzzle): crie `game/<genero>/` com fase, player e `tests/<genero>_smoke_test.gd`, e registre em `tools/genre_setup.gd` (`GENRES`) e em `tests/smoke_test.gd` (`GENRE_SUITES`).
+
+## Contribuindo
+
+Sugestões e correções são bem-vindas. Veja o [CONTRIBUTING.md](CONTRIBUTING.md) para o fluxo (issue → branch → PR com smoke test passando). Para reportar uma vulnerabilidade, **não abra issue pública**: siga o [SECURITY.md](SECURITY.md).
+
+## Créditos e uso de IA
+
+Este template foi idealizado e dirigido por **Tiago de Souza Barros** e desenvolvido **com assistência de inteligência artificial**: o **Claude** (modelo Claude Opus 5.5), da **[Anthropic](https://www.anthropic.com)**, usado através do **[Claude Code](https://claude.com/claude-code)**.
+
+- **O que a IA fez:** arquitetura, código GDScript, cenas, testes automatizados, CI e documentação foram produzidos em colaboração com o Claude, a partir dos requisitos, decisões e revisões do autor.
+- **Como foi verificado:** cada mudança foi validada com o smoke test automatizado (126 verificações), com builds reais no GitHub Actions para Windows, Linux, Web e Android, e com uma revisão de segurança e performance que reproduziu a vulnerabilidade encontrada antes de corrigi-la.
+- **Rastreabilidade:** os commits feitos com a IA trazem o trailer `Co-Authored-By: Claude`.
+- **Responsabilidade:** as decisões finais e a manutenção são do autor. Como em qualquer código de terceiros, revise e teste antes de usar em produção.
+- O arquivo [CLAUDE.md](CLAUDE.md) contém as instruções de arquitetura usadas pelo Claude Code e serve para continuar o desenvolvimento com IA mantendo os padrões do projeto.
+
+## Licença
+
+Distribuído sob a **licença MIT**: veja [LICENSE](LICENSE). Você pode usar, modificar e vender jogos feitos com o template. A única exigência é manter o aviso de copyright do template nas cópias do código dele, por exemplo num arquivo de licenças de terceiros ou nos créditos do jogo.
