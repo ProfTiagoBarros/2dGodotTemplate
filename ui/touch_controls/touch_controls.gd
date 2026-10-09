@@ -2,11 +2,10 @@ class_name TouchControls
 extends CanvasLayer
 ## Exibe os controles de toque conforme a opção do usuário
 ## ("auto" = só quando o último input foi toque). As ações dos botões
-## A/B são definidas pela fase via `configure()`, então a mesma UI
-## serve para platformer (pular/interagir) e top-down (atacar/dash).
+## A/B/C são definidas pela fase via `configure()`, então a mesma UI
+## serve para platformer (pular/atacar/dash) e top-down (atacar/dash).
 
-@onready var _primary_button: TouchButton = %PrimaryButton
-@onready var _secondary_button: TouchButton = %SecondaryButton
+@onready var _action_buttons: Array[TouchButton] = [%PrimaryButton, %SecondaryButton, %TertiaryButton]
 
 
 func _ready() -> void:
@@ -15,10 +14,14 @@ func _ready() -> void:
 	_refresh()
 
 
-func configure(primary_action: StringName, secondary_action: StringName) -> void:
-	_primary_button.action = primary_action
-	_secondary_button.action = secondary_action
-	_secondary_button.visible = not secondary_action.is_empty()
+## Atribui as ações aos botões A, B, C; botões sem ação (ou com ação
+## inexistente no InputMap) ficam escondidos.
+func configure(actions: Array[StringName]) -> void:
+	for i in _action_buttons.size():
+		var button := _action_buttons[i]
+		var action: StringName = actions[i] if i < actions.size() else &""
+		button.action = action
+		button.visible = not action.is_empty() and InputMap.has_action(action)
 
 
 func _refresh() -> void:

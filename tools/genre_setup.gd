@@ -12,7 +12,7 @@ const SCENE_PATHS_FILE := "res://core/constants/scene_paths.gd"
 const GENRES := {
 	"platformer": {
 		"level": "res://game/platformer/levels/platformer_level_01.tscn",
-		"unused_actions": ["attack", "dash", "aim_left", "aim_right", "aim_up", "aim_down"],
+		"unused_actions": ["aim_left", "aim_right", "aim_up", "aim_down"],
 	},
 	"topdown": {
 		"level": "res://game/topdown/levels/topdown_level_01.tscn",

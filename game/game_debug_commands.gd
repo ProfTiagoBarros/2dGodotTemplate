@@ -11,6 +11,8 @@ func register() -> void:
 	DebugTools.register_command("god", _cmd_god, "god - liga/desliga invencibilidade do player")
 	DebugTools.register_command("heal", _cmd_heal, "heal [n] - cura n (ou tudo); revive se morto")
 	DebugTools.register_command("kill", _cmd_kill, "kill - mata o player")
+	DebugTools.register_command("ability", _cmd_ability,
+			"ability [nome] [on|off] - lista ou liga/desliga habilidades (metroidvania)")
 	DebugTools.register_command("tp", _cmd_tp, "tp <x> <y> - teleporta o player (sem args: até o mouse)")
 	DebugTools.register_command("level", _cmd_level, "level [nome] - lista as fases ou carrega uma")
 	DebugTools.register_command("reload", _cmd_reload, "reload - recarrega a cena atual")
@@ -81,6 +83,21 @@ func _cmd_kill(_args: PackedStringArray) -> String:
 	DebugTools.close_console()
 	health.kill()
 	return "Player morto."
+
+
+func _cmd_ability(args: PackedStringArray) -> String:
+	var player := _player()
+	if player == null or not player.has_method(&"unlock_ability"):
+		return "O player atual não tem sistema de habilidades."
+	if args.is_empty():
+		return "Habilidades: %s" % str(player.get(&"abilities"))
+	var ability := StringName(args[0])
+	var turn_on := args.size() < 2 or args[1] != "off"
+	if turn_on:
+		player.call(&"unlock_ability", ability)
+	else:
+		player.call(&"lock_ability", ability)
+	return "Habilidades: %s" % str(player.get(&"abilities"))
 
 
 func _cmd_tp(args: PackedStringArray) -> String:

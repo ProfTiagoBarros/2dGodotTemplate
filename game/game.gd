@@ -14,6 +14,7 @@ static var level_override := ""
 
 @onready var _world: Node2D = %World
 @onready var _touch_controls: TouchControls = %TouchControls
+@onready var _hud: GameHUD = %HUD
 
 
 func _ready() -> void:
@@ -24,7 +25,8 @@ func _ready() -> void:
 	Log.info("Fase carregada: %s" % level_path.get_file())
 	var level := packed.instantiate() as Level
 	_world.add_child(level)
-	_touch_controls.configure(level.touch_primary_action, level.touch_secondary_action)
+	_touch_controls.configure(level.touch_actions)
+	_hud.set_hint_actions(level.hud_hint_actions)
 	EventBus.player_died.connect(_on_player_died)
 
 

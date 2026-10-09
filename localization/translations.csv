@@ -43,3 +43,7 @@ INPUT_MOUSE_WHEEL_DOWN,Wheel Down,Roda para Baixo
 INPUT_MOUSE_X1,Mouse Back,Mouse Voltar
 INPUT_MOUSE_X2,Mouse Forward,Mouse Avançar
 INPUT_MOUSE_BUTTON,Mouse Button,Botão do Mouse
+ABILITY_UNLOCKED,%s unlocked!,%s desbloqueado!
+ABILITY_ATTACK,Attack,Ataque
+ABILITY_DASH,Dash,Dash
+ABILITY_DOUBLE_JUMP,Double Jump,Pulo duplo

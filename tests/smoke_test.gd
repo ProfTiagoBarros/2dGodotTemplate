@@ -14,12 +14,16 @@ const GENRE_SUITES: Array[String] = [
 	"res://game/topdown/tests/topdown_smoke_test.gd",
 ]
 
+const TEST_SLOT := 98
+
 var _failures := 0
 var _checks := 0
 
 
 func _ready() -> void:
 	_test_save_system()
+	# Slot de teste: autosaves (ex.: AbilityPickup) não tocam o save real do jogador.
+	SaveSystem.new_game(TEST_SLOT)
 	await _test_input_bindings()
 	await _test_debug_tools()
 
@@ -28,11 +32,17 @@ func _ready() -> void:
 		if not ResourceLoader.exists(path):
 			continue
 		print("\n== %s ==" % path.get_file().get_basename())
-		var suite: Object = (load(path) as GDScript).new()
+		var script := load(path) as GDScript
+		# Suíte com erro de compilação deve FALHAR, não travar o runner (CI).
+		if script == null or not script.can_instantiate():
+			check(false, "Suíte compila: %s" % path)
+			continue
+		var suite: Object = script.new()
 		await suite.call(&"run", self)
 		release_all_actions()
 		suites_run += 1
 	check(suites_run > 0, "Ao menos um módulo de gênero presente")
+	SaveSystem.delete_save(TEST_SLOT)
 
 	print("\nSmoke test: %s (%d verificações)" % [
 		"PASSOU" if _failures == 0 else "%d FALHA(S)" % _failures, _checks])

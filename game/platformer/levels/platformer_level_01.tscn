@@ -4,10 +4,14 @@
 [ext_resource type="Script" path="res://game/world/solid_block.gd" id="2_block"]
 [ext_resource type="PackedScene" path="res://game/platformer/player/platformer_player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://game/hazards/damage_zone.tscn" id="4_hazard"]
+[ext_resource type="PackedScene" path="res://game/props/training_dummy.tscn" id="5_dummy"]
+[ext_resource type="PackedScene" path="res://game/props/ability_pickup.tscn" id="6_pickup"]
 
 [node name="PlatformerLevel01" type="Node2D"]
 script = ExtResource("1_level")
 level_id = &"platformer_01"
+touch_actions = Array[StringName]([&"jump", &"attack", &"dash"])
+hud_hint_actions = Array[StringName]([&"jump", &"attack", &"dash", &"pause"])
 
 [node name="Geometry" type="Node2D" parent="."]
 
@@ -41,8 +45,20 @@ position = Vector2(700, 230)
 script = ExtResource("2_block")
 size = Vector2(128, 12)
 
+[node name="HighLedge" type="StaticBody2D" parent="Geometry"]
+position = Vector2(780, 135)
+script = ExtResource("2_block")
+size = Vector2(96, 12)
+color = Color(0.32, 0.29, 0.45, 1)
+
 [node name="Spikes" parent="." instance=ExtResource("4_hazard")]
 position = Vector2(560, 280)
+
+[node name="TrainingDummy" parent="." instance=ExtResource("5_dummy")]
+position = Vector2(330, 280)
+
+[node name="DoubleJumpPickup" parent="." instance=ExtResource("6_pickup")]
+position = Vector2(920, 262)
 
 [node name="Player" parent="." instance=ExtResource("3_player")]
 position = Vector2(100, 280)

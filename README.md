@@ -31,9 +31,9 @@ Template base para jogos **2D** em **Godot 4.7+**, pensado para **PC e celular**
 | Mover | A/D/W/S ou setas | Analógico esq. / D-pad | Joystick virtual |
 | Mirar (top-down) | Mouse (cursor) | Analógico direito | Direção do movimento |
 | Pular (platformer) | Espaço / K | A | Botão A |
-| Atacar (top-down) | J / Clique esquerdo | X | Botão A |
-| Dash (top-down) | Shift / L / Clique direito | B | Botão B |
-| Interagir | E | Y | Botão B (platformer) |
+| Atacar | J / Clique esquerdo | X | Botão B (platformer) / A (top-down) |
+| Dash | Shift / L / Clique direito | B | Botão C (platformer) / B (top-down) |
+| Interagir | E | Y | — |
 | Pausar | Esc / P | Start | Botão II |
 
 Tudo isso pode ser **remapeado pelo jogador** em *Configurações → Controles* (veja [Remapeamento de controles](#remapeamento-de-controles)).
@@ -159,7 +159,7 @@ O console também mostra **toda a saída do jogo**: `print`, `Log`, avisos e err
 
 **Comandos inclusos:**
 - Genéricos: `help`, `clear`, `overlay`, `fps <n>`, `timescale <x>`, `collisions` (mostra as formas de colisão), `log <nível>`, `lang <locale>`, `quit`.
-- De gameplay: `god`, `heal [n]`, `kill`, `tp <x> <y>` (sem argumentos, vai até o mouse), `level [nome]` (lista ou carrega uma fase de qualquer pasta `levels/`), `reload`, `save [slot]`, `load [slot]`.
+- De gameplay: `god`, `heal [n]`, `kill`, `tp <x> <y>` (sem argumentos, vai até o mouse), `level [nome]` (lista ou carrega uma fase de qualquer pasta `levels/`), `reload`, `save [slot]`, `load [slot]`, `ability [nome] [on|off]`.
 
 **Para adicionar comandos e watches**, cada sistema registra os próprios:
 
@@ -184,17 +184,35 @@ Os comandos de gameplay ficam em `game/game_debug_commands.gd`. O `core/` só te
 - **Composição com componentes**: vida e dano são nós reutilizáveis, iguais nos dois gêneros. A `HurtboxComponent` ignora hitboxes do mesmo `owner`, então o ataque do player não fere o próprio player.
 - **State Machine baseada em nós**: cada estado é um nó filho com `enter/exit/update/physics_update/handle_input`. O player expõe primitivas de movimento e os estados decidem as transições.
 - **Data-driven com Resources**: `PlatformerStats` e `TopDownStats` são `Resource`s. Crie `.tres` diferentes por personagem ou power-up.
-- **Input abstrato**: o gameplay só lê **ações** do InputMap. Teclado, gamepad e toque geram as mesmas ações. A fase define o que os botões de toque A/B fazem (`Level.touch_primary_action` / `touch_secondary_action`).
+- **Input abstrato**: o gameplay só lê **ações** do InputMap. Teclado, gamepad e toque geram as mesmas ações. A fase define o que os botões de toque A/B/C fazem (`Level.touch_actions`) e quais dicas de botão a HUD mostra (`Level.hud_hint_actions`).
 
-### Platformer (side-scrolling)
+### Platformer (side-scrolling / metroidvania)
 
-Estados: **Idle → Run → Jump → Fall**. O pulo é definido por **altura** e **tempo até o ápice**:
+Estados: **Idle, Run, Jump, Fall, Attack, Dash**. O pulo é definido por **altura** e **tempo até o ápice**:
 
 - `v₀ = 2h / t_apex`
 - `g_subida = 2h / t_apex²`
 - `g_queda = 2h / t_descida²` (queda mais pesada = pulo com mais "peso")
 
 Soltar o botão cedo aplica a gravidade de queda, o que dá **pulo de altura variável**. Também tem **coyote time** e **jump buffer**.
+
+- **Ataque direcional:** para o lado, **para cima** (segurando ↑) ou **para baixo no ar** (segurando ↓). O player continua se movendo durante o golpe e não vira de lado no meio dele. Pular no chão cancela o ataque.
+- **Pogo:** acertar algo com o ataque para baixo quica o player (`pogo_velocity`) e recarrega o pulo duplo e o dash no ar, como no Hollow Knight.
+- **Dash horizontal:** velocidade fixa **sem gravidade**, com i-frames (`dash_invulnerable`) e cooldown. No ar vale **1 por pulo** (`air_dashes`). Termina antes se bater numa parede.
+- **Pulo duplo:** `air_jumps` pulos extras no ar.
+
+Todos os números ficam em `PlatformerStats`, nos grupos *Attack*, *Dash* e *Jump*.
+
+#### Habilidades (progressão metroidvania)
+
+O player tem uma lista `abilities`. Por padrão ela traz `attack` e `dash`; o `double_jump` começa bloqueado.
+
+- `has_ability()` controla o que pode ser usado; os estados consultam antes de agir.
+- `unlock_ability()` / `lock_ability()` alteram a lista. Destravar emite `EventBus.ability_unlocked`, e a HUD mostra "<habilidade> desbloqueado!".
+- O progresso é **salvo no SaveSystem**: o player está no grupo `persist`, e o item faz autosave ao ser coletado.
+- **`AbilityPickup`** (`game/props/`) é o item coletável que destrava uma habilidade. Ele some sozinho se o player já a tiver. A fase de exemplo tem um item de pulo duplo e uma plataforma alta projetada para só ser alcançada com ele.
+- **Nova habilidade:** escolha um nome (ex.: `wall_jump`), cheque `player.has_ability(&"wall_jump")` no estado que a usa, coloque um `AbilityPickup` com `ability = &"wall_jump"` e adicione a chave `ABILITY_WALL_JUMP` em `translations.csv`.
+- Para testar, use o comando de debug `ability [nome] [on|off]`.
 
 ### Top-down
 

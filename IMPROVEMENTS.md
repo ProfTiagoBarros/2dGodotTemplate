@@ -40,7 +40,9 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 - [ ] **Checkpoints** e respawn sem recarregar a cena inteira.
 - [x] ~~Variante top-down do player~~: implementada como módulo `game/topdown/` + setup de gênero.
 - [ ] **Top-down**: ataque com combo (encadear Attack → Attack2 com janela de input), mira por mouse/analógico direito (twin-stick) e snap opcional do `facing` para 4/8 direções conforme as animações.
-- [ ] **Platformer**: wall slide/wall jump, plataformas one-way (`one_way_collision`), escadas e câmera com look-ahead horizontal.
+- [x] ~~Platformer: ataque direcional + pogo, dash, pulo duplo e sistema de habilidades desbloqueáveis~~ (base metroidvania).
+- [ ] **Platformer/metroidvania — próximas habilidades**: wall slide/wall jump, plataformas one-way (`one_way_collision`, com "descer" segurando ↓ + pulo), escadas, gancho/grapple.
+- [ ] **Metroidvania — mundo**: portas/barreiras que exigem habilidade (`has_ability`), mapa por salas com transições (`Area2D` nas bordas → `SceneLoader` + ponto de entrada), minimapa revelado por sala visitada, save points/bancos e câmera com limites por sala + look-ahead horizontal.
 - [ ] Animações reais: `AnimatedSprite2D`/`AnimationPlayer` acionados no `enter()` de cada estado e `AnimationTree` se a blend ficar complexa.
 
 ## 5. Arte e mundo

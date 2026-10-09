@@ -13,6 +13,12 @@ func run(t: SmokeTest) -> void:
 		return
 
 	t.check(player.state_machine.current_state.name == &"Idle", "Estado inicial é Idle")
+	var hud := game.find_child("HUD", true, false) as GameHUD
+	var expected_hints: Array[StringName] = [&"attack", &"dash", &"pause"]
+	t.check(hud.get_hint_actions() == expected_hints,
+			"HUD mostra as dicas da fase (sem pular)")
+	t.check(not (game.find_child("TertiaryButton", true, false) as TouchButton).visible,
+			"Toque: botão C escondido no top-down")
 	var spawn := player.global_position
 	await t.frames(20)
 	t.check(player.global_position.distance_to(spawn) < 0.5, "Sem gravidade: player parado fica parado")

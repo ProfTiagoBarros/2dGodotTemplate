@@ -11,6 +11,7 @@ extends Node
 # Player
 signal player_health_changed(current: int, max_health: int)
 signal player_died
+signal ability_unlocked(ability: StringName)
 
 # Fluxo de jogo
 signal level_completed(level_id: StringName)
@@ -18,5 +19,7 @@ signal game_paused(paused: bool)
 
 # Feedback / "juice"
 signal camera_shake_requested(trauma: float)
+## Mensagem curta na tela (aceita chave de tradução).
+signal toast_requested(text: String)
 
 @warning_ignore_restore("unused_signal")

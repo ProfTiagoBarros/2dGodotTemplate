@@ -12,6 +12,7 @@ script = ExtResource("1_game")
 unique_name_in_owner = true
 
 [node name="HUD" parent="." instance=ExtResource("3_hud")]
+unique_name_in_owner = true
 
 [node name="TouchControls" parent="." instance=ExtResource("4_touch")]
 unique_name_in_owner = true

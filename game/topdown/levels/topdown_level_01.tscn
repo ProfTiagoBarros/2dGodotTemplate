@@ -10,8 +10,8 @@
 [node name="TopDownLevel01" type="Node2D"]
 script = ExtResource("1_level")
 level_id = &"topdown_01"
-touch_primary_action = &"attack"
-touch_secondary_action = &"dash"
+touch_actions = Array[StringName]([&"attack", &"dash"])
+hud_hint_actions = Array[StringName]([&"attack", &"dash", &"pause"])
 
 [node name="Floor" type="Polygon2D" parent="."]
 z_index = -10
