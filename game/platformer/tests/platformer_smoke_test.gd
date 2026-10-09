@@ -2,6 +2,7 @@ extends RefCounted
 ## Suíte do módulo platformer (executada por tests/smoke_test.tscn).
 
 const LEVEL := "res://game/platformer/levels/platformer_level_01.tscn"
+const ENEMY_SCENE := preload("res://game/platformer/enemies/platformer_enemy.tscn")
 
 
 func run(t: SmokeTest) -> void:
@@ -12,13 +13,97 @@ func run(t: SmokeTest) -> void:
 		await t.despawn(game)
 		return
 
+	# Inimigos da fase: confere que existem e tira de cena para os testes de
+	# movimento serem determinísticos (os de inimigo criam os seus).
+	var level_enemies := game.get_tree().get_nodes_in_group(&"enemy")
+	t.check(level_enemies.size() >= 2, "Fase tem inimigos")
+	for enemy: Node in level_enemies:
+		enemy.queue_free()
+	await t.frames(1)
+
 	await _test_movement(t, game, player)
 	await _test_ui(t, game)
 	await _test_attacks(t, game, player)
 	await _test_dash(t, player)
 	await _test_abilities(t, game, player)
 	await _test_game_feel(t, game, player)
+	await _test_enemies(t, game, player)
 	await t.despawn(game)
+
+
+func _spawn_enemy(game: Game, position: Vector2) -> PlatformerEnemy:
+	var enemy: PlatformerEnemy = ENEMY_SCENE.instantiate()
+	(game.get_node("%World") as Node).get_child(0).add_child(enemy)
+	enemy.global_position = position
+	return enemy
+
+
+func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
+	player.health.revive()
+	await _place(t, player, Vector2(470.0, 280.0))
+
+	# Patrulha: anda no chão e vira na beirada de uma plataforma pequena.
+	var walker := _spawn_enemy(game, Vector2(200.0, 280.0))
+	var ledge_walker := _spawn_enemy(game, Vector2(260.0, 234.0))
+	await t.frames(5)
+	var start_x := walker.global_position.x
+	t.check(walker.state_machine.current_state.name == &"Patrol", "Inimigo começa patrulhando")
+	await t.frames(240)
+	t.check(absf(walker.global_position.x - start_x) > 5.0, "Patrulha move o inimigo")
+	t.check(ledge_walker.is_on_floor() and absf(ledge_walker.global_position.y - 234.0) < 2.0,
+			"Patrulha vira na beirada (não cai da plataforma)")
+	ledge_walker.queue_free()
+
+	# Perseguição e ataque (com aviso antes do bote).
+	var states: Array[StringName] = []
+	walker.state_machine.state_changed.connect(func(_from: StringName, to: StringName) -> void: states.append(to))
+	await _place(t, player, walker.global_position + Vector2(90.0, 0.0))
+	await t.frames(5)
+	t.check(walker.state_machine.current_state.name == &"Chase" and walker.velocity.x > 0.0,
+			"Ver o player faz o inimigo perseguir")
+	var health_before := player.health.current
+	for i in 150:
+		await t.frames(1)
+		if player.health.current < health_before:
+			break
+	t.check(&"Windup" in states and &"Attack" in states, "Inimigo avisa (windup) antes do bote")
+	t.check(player.health.current < health_before, "Inimigo causa dano no player")
+	player.health.revive()
+
+	# Matar o inimigo: dano → atordoado (Hurt) → morte → some da cena.
+	player.health.god_mode = true
+	var killed: Array[Node] = []
+	EventBus.enemy_died.connect(func(enemy: Node) -> void: killed.append(enemy), CONNECT_ONE_SHOT)
+	for hit in 3:
+		if not is_instance_valid(walker) or walker.health.is_dead():
+			break
+		await _place(t, player, walker.global_position + Vector2(-16.0, 0.0))
+		player.face(1.0)
+		await t.tap(&"attack")
+		await t.frames(25)
+		if hit == 0:
+			t.check(&"Hurt" in states, "Golpe atordoa o inimigo (Hurt)")
+	t.check(killed.size() == 1, "3 golpes matam o inimigo (EventBus.enemy_died)")
+	await t.frames(30)
+	t.check(not is_instance_valid(walker), "Inimigo morto sai da cena")
+
+	# Times: inimigos não se ferem entre si nem ferem o alvo de treino.
+	await _place(t, player, Vector2(950.0, 280.0))
+	var dummy := game.find_child("TrainingDummy", true, false) as Node2D
+	var dummy_health := dummy.get_node("HealthComponent") as HealthComponent
+	dummy_health.revive()
+	var a := _spawn_enemy(game, dummy.global_position + Vector2(-12.0, 0.0))
+	var b := _spawn_enemy(game, dummy.global_position + Vector2(-14.0, 0.0))
+	await t.frames(3)
+	a.set_attack_active(true)
+	await t.frames(15)
+	t.check(a.health.current == a.health.max_health and b.health.current == b.health.max_health,
+			"Inimigos não se ferem entre si (time 'enemy')")
+	t.check(dummy_health.current == dummy_health.max_health, "Inimigos não ferem o alvo de treino")
+	a.queue_free()
+	b.queue_free()
+	player.health.god_mode = false
+	await t.frames(2)
 
 
 func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
@@ -26,8 +111,8 @@ func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 	await _place(t, player, Vector2(150.0, 280.0))
 	t.spawned_effects.clear()
 	await t.tap(&"jump")
-	await t.frames(2)
-	t.check(player.squash.scale.y > 1.05, "Pulo estica o personagem (stretch)")
+	t.check(await _wait_for(t, func() -> bool: return player.squash.scale.y > 1.05),
+			"Pulo estica o personagem (stretch)")
 	t.check("dust_puff" in t.spawned_effects, "Pulo solta poeira")
 	await t.frames(80)
 
@@ -38,8 +123,8 @@ func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 		if player.is_on_floor():
 			break
 	t.spawned_effects.clear()
-	await t.frames(1)
-	t.check(player.squash.scale.x > 1.05, "Aterrissagem achata o personagem (squash)")
+	t.check(await _wait_for(t, func() -> bool: return player.squash.scale.x > 1.05),
+			"Aterrissagem achata o personagem (squash)")
 	t.check("dust_puff" in t.spawned_effects, "Aterrissagem solta poeira")
 	await t.frames(30)
 
@@ -195,3 +280,14 @@ func _place(t: SmokeTest, player: PlatformerPlayer, position: Vector2) -> void:
 	player.global_position = position
 	player.velocity = Vector2.ZERO
 	await t.frames(3)
+
+
+## Espera até `condition` ficar verdadeira (no máximo `max_frames`). Eventos
+## disparados por input podem cair 1-2 frames depois; checar num frame exato
+## deixa o teste intermitente.
+func _wait_for(t: SmokeTest, condition: Callable, max_frames: int = 8) -> bool:
+	for i in max_frames:
+		await t.frames(1)
+		if condition.call():
+			return true
+	return false

@@ -22,6 +22,7 @@ func register() -> void:
 	DebugTools.watch("Player", _watch_player)
 	DebugTools.watch("Estado", _watch_state)
 	DebugTools.watch("Vida", _watch_health)
+	DebugTools.watch("Inimigos", _watch_enemies)
 
 
 #region Helpers
@@ -170,3 +171,14 @@ func _watch_health() -> String:
 	return "%d/%d%s" % [health.current, health.max_health, "  [GOD]" if health.god_mode else ""]
 
 #endregion
+
+
+func _watch_enemies() -> String:
+	var enemies := _tree().get_nodes_in_group(&"enemy")
+	if enemies.is_empty():
+		return ""
+	var chasing := 0
+	for enemy: Node in enemies:
+		if enemy.get(&"target") != null:
+			chasing += 1
+	return "%d (%d perseguindo)" % [enemies.size(), chasing]

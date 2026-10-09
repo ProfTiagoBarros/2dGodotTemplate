@@ -6,3 +6,7 @@ extends Area2D
 signal hit_landed(hurtbox: HurtboxComponent)
 
 @export var damage := 1
+## Time de quem causa o dano ("player", "enemy"...). Hurtboxes do MESMO time
+## ignoram este hitbox (sem fogo amigo). Vazio = neutro: fere todo mundo
+## (ex.: espinhos, lava).
+@export var team: StringName = &""

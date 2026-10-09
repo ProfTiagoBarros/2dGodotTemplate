@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyStats" format=3]
+
+[ext_resource type="Script" path="res://game/enemies/enemy_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+patrol_speed = 25.0
+chase_speed = 55.0
+detection_radius = 120.0
+lose_target_radius = 180.0
+attack_range = 34.0
+windup_time = 0.45
+lunge_speed = 190.0
+lunge_time = 0.22

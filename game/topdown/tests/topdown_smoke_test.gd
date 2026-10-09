@@ -2,6 +2,7 @@ extends RefCounted
 ## Suíte do módulo top-down (executada por tests/smoke_test.tscn).
 
 const LEVEL := "res://game/topdown/levels/topdown_level_01.tscn"
+const ENEMY_SCENE := preload("res://game/topdown/enemies/topdown_enemy.tscn")
 
 
 func run(t: SmokeTest) -> void:
@@ -11,6 +12,13 @@ func run(t: SmokeTest) -> void:
 	if player == null:
 		await t.despawn(game)
 		return
+
+	# Inimigos da fase: confere e tira de cena (os testes de inimigo criam os seus).
+	var level_enemies := game.get_tree().get_nodes_in_group(&"enemy")
+	t.check(level_enemies.size() >= 2, "Fase tem inimigos")
+	for enemy: Node in level_enemies:
+		enemy.queue_free()
+	await t.frames(1)
 
 	t.check(player.state_machine.current_state.name == &"Idle", "Estado inicial é Idle")
 	var hud := game.find_child("HUD", true, false) as GameHUD
@@ -109,4 +117,49 @@ func run(t: SmokeTest) -> void:
 	t.check(not InputManager.using_mouse and player.aim_source == TopDownPlayer.AimSource.MOVEMENT,
 			"Gamepad desativa a mira por mouse")
 
+	await _test_enemies(t, game, player)
 	await t.despawn(game)
+
+
+func _test_enemies(t: SmokeTest, game: Game, player: TopDownPlayer) -> void:
+	player.health.revive()
+	player.global_position = Vector2(560.0, 300.0)
+	player.velocity = Vector2.ZERO
+	var slime: TopDownEnemy = ENEMY_SCENE.instantiate()
+	(game.get_node("%World") as Node).get_child(0).get_node("Entities").add_child(slime)
+	slime.global_position = Vector2(480.0, 250.0)
+	var states: Array[StringName] = []
+	slime.state_machine.state_changed.connect(func(_from: StringName, to: StringName) -> void: states.append(to))
+	await t.frames(5)
+
+	# Persegue em 2D (nos dois eixos) e ataca com aviso.
+	t.check(slime.state_machine.current_state.name == &"Chase", "Slime vê o player e persegue")
+	var to_player := slime.global_position.direction_to(player.global_position)
+	t.check(slime.velocity.normalized().dot(to_player) > 0.9, "Perseguição vai direto ao player (2D)")
+	var health_before := player.health.current
+	for i in 150:
+		await t.frames(1)
+		if player.health.current < health_before:
+			break
+	t.check(&"Windup" in states and &"Attack" in states, "Slime avisa (windup) antes do bote")
+	t.check(player.health.current < health_before, "Slime causa dano no player")
+
+	# Matar: 3 golpes mirando no slime.
+	player.health.revive()
+	player.health.god_mode = true
+	var killed: Array[int] = [0]
+	EventBus.enemy_died.connect(func(_enemy: Node) -> void: killed[0] += 1, CONNECT_ONE_SHOT)
+	for hit in 3:
+		if not is_instance_valid(slime) or slime.health.is_dead():
+			break
+		player.global_position = slime.global_position + Vector2(-16.0, 0.0)
+		player.velocity = Vector2.ZERO
+		player.face(Vector2.RIGHT)
+		await t.frames(2)
+		await t.tap(&"attack")
+		await t.frames(25)
+	t.check(&"Hurt" in states, "Golpe atordoa o slime (Hurt)")
+	t.check(killed[0] == 1, "3 golpes matam o slime (EventBus.enemy_died)")
+	await t.frames(30)
+	t.check(not is_instance_valid(slime), "Slime morto sai da cena")
+	player.health.god_mode = false

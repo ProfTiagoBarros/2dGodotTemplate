@@ -55,6 +55,12 @@ The smoke test remaps bindings, so it snapshots and restores the player's real b
   - `GameFeel.spawn_effect(GameFeel.DUST | HIT_SPARKS, pos)` instances a self-freeing `OneShotEffect` (CPUParticles2D) into `current_scene`.
   - `HitFlashComponent` puts a ShaderMaterial on `target` and sets `use_parent_material` on its descendants.
   - Character visuals are `Visual` (flip via `scale.x`) → `Squash` (`SquashStretch` + flash target) → drawables. Shadows stay outside `Squash`. Don't tween `Visual.modulate` for damage; the flash handles it.
+- **Enemies** (`game/enemies/`, shared; concrete types live in each module's `enemies/`):
+  - `Enemy` (base `CharacterBody2D`, group `enemy`) handles perception, windup/lunge, knockback and death; the generic `EnemyState`s (Patrol/Chase/Windup/Attack/Recover/Hurt) use only its public API.
+  - Perception happens in `update_target()`, which runs in `Enemy._physics_process` before the StateMachine. It checks `detection_radius` plus a line-of-sight ray against `PhysicsLayers.WORLD`, with hysteresis via `lose_target_radius`.
+  - Genre subclasses override only movement: `patrol_direction`, `direction_to_target`, `move_toward_direction` (which must call `move_and_slide`), `lunge_step`, `apply_knockback` and optionally `can_attack_target`. `PlatformerEnemy` uses `LedgeRay` with `force_raycast_update()` for ledge checks.
+  - Numbers come from `EnemyStats` .tres files. `end_windup()` must kill the windup tween, because a hit can interrupt the windup.
+  - Genre test suites free the level's enemies at the start and spawn their own, which keeps the movement tests deterministic.
 - **Debug tools** exist only when `OS.is_debug_build()`; in release, `DebugTools` returns early and loads nothing.
   - F3 toggles the overlay, F1/` the console (which pauses the tree and restores the previous pause state on close), and a 3-finger tap opens the console on mobile.
   - `ConsoleLogger` (`core/debug/`, a native `Logger` subclass registered with `OS.add_logger`) captures all engine output thread-safely, and `DebugTools._process` drains it into the console.
@@ -64,7 +70,7 @@ The smoke test remaps bindings, so it snapshots and restores the player's real b
 - **Communication rule**: call down, signal up. Use `EventBus` only between systems that don't know each other. For example, the players emit `player_health_changed` and the HUD listens; the HUD never references a player.
 - **`core/`**:
   - Node-based FSM: states are identified by **node name**, and `StateMachine` awaits `owner.ready` before entering the initial state.
-  - Damage components: `HitboxComponent` (layer 4) is detected by `HurtboxComponent` (layer 5, mask 4), which passes damage to `HealthComponent`. The hurtbox polls each physics frame so i-frames work, and it **skips hitboxes with the same `owner`**. `HealthComponent` also offers `grant_invulnerability()` and `revive()`.
+  - Damage components: `HitboxComponent` (layer 4) is detected by `HurtboxComponent` (layer 5, mask 4), which passes damage to `HealthComponent`. The hurtbox polls each physics frame so i-frames work. It **skips hitboxes with the same `owner` or the same non-empty `team`** (`player`/`enemy`); an empty team is neutral and hits everyone, e.g. spikes. `HealthComponent` also offers `grant_invulnerability()`, `revive()`, `kill()` and `god_mode`.
   - `GameCamera`: trauma² noise shake triggered via `EventBus.camera_shake_requested`.
   - Static helpers: `MathUtils`, `PlatformUtils`, `ScenePaths`, `PhysicsLayers`.
 - **Players**: both expose movement primitives, and their states decide the transitions.

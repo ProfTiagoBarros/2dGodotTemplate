@@ -13,6 +13,9 @@ signal player_health_changed(current: int, max_health: int)
 signal player_died
 signal ability_unlocked(ability: StringName)
 
+# Inimigos
+signal enemy_died(enemy: Node)
+
 # Fluxo de jogo
 signal level_completed(level_id: StringName)
 signal game_paused(paused: bool)

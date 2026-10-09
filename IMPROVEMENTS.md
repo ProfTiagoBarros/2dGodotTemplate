@@ -32,8 +32,9 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 
 ## 4. Gameplay e arquitetura
 
-- [ ] **Inimigo de exemplo** reutilizando `StateMachine` + componentes (patrulha → perseguição → ataque).
-- [ ] **Times de dano**: a hurtbox já ignora hitboxes do próprio `owner`. Para evitar fogo amigo entre inimigos, separe layers `player_hitbox`/`enemy_hitbox` ou adicione `team` aos componentes.
+- [x] ~~Inimigo de exemplo (patrulha → persegue → windup → bote → recupera, Hurt) e times de dano~~: implementados (`game/enemies/`, `team` nos componentes).
+- [ ] **Mais inimigos**: atirador (projéteis com pooling), voador (ignora gravidade, persegue em 2D no platformer), tanque com escudo frontal, spawners e um chefe com fases (FSM de alto nível trocando "padrões" de ataque).
+- [ ] **IA**: evitar espinhos/buracos ao perseguir, desvio de obstáculos no top-down (`NavigationAgent2D` + `NavigationRegion2D`), aggro em grupo (um inimigo alerta os próximos).
 - [ ] **Behavior Trees** para IA complexa (addons **LimboAI** ou **Beehave**). A FSM atual atende casos simples.
 - [ ] **Object pooling** para projéteis e partículas frequentes.
 - [ ] **Interação** (`InteractableComponent` + ação `interact`, já mapeada) e sistema de **diálogo** (addon **Dialogue Manager**, de Nathan Hoad).

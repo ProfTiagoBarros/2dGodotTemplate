@@ -4,12 +4,15 @@ extends Area2D
 ## Camada sugerida: "hurtboxes" (layer 5), máscara: "hitboxes" (layer 4).
 ## Checa sobreposição a cada frame de física, então ficar parado sobre
 ## espinhos continua causando dano assim que os i-frames acabam.
-## Hitboxes da mesma entidade (mesmo `owner`) são ignoradas, então o ataque
-## do player nunca acerta o próprio player.
+##
+## Ignora hitboxes da mesma entidade (mesmo `owner`) e do mesmo `team`
+## (sem fogo amigo). Hitboxes sem time (neutros) ferem todos.
 
 signal hit_received(hitbox: HitboxComponent)
 
 @export var health: HealthComponent
+## Time desta entidade ("player", "enemy"...). Vazio = recebe dano de todos.
+@export var team: StringName = &""
 
 
 func _physics_process(_delta: float) -> void:
@@ -17,9 +20,15 @@ func _physics_process(_delta: float) -> void:
 		return
 	for area: Area2D in get_overlapping_areas():
 		var hitbox := area as HitboxComponent
-		if hitbox == null or hitbox.owner == owner:
+		if hitbox == null or not can_be_hit_by(hitbox):
 			continue
 		if health.take_damage(hitbox.damage, hitbox):
 			hit_received.emit(hitbox)
 			hitbox.hit_landed.emit(self)
 			return
+
+
+func can_be_hit_by(hitbox: HitboxComponent) -> bool:
+	if hitbox.owner == owner:
+		return false
+	return team.is_empty() or hitbox.team.is_empty() or hitbox.team != team

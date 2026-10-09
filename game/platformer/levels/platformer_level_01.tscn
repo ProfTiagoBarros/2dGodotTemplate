@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://game/hazards/damage_zone.tscn" id="4_hazard"]
 [ext_resource type="PackedScene" path="res://game/props/training_dummy.tscn" id="5_dummy"]
 [ext_resource type="PackedScene" path="res://game/props/ability_pickup.tscn" id="6_pickup"]
+[ext_resource type="PackedScene" path="res://game/platformer/enemies/platformer_enemy.tscn" id="7_enemy"]
 
 [node name="PlatformerLevel01" type="Node2D"]
 script = ExtResource("1_level")
@@ -59,6 +60,14 @@ position = Vector2(330, 280)
 
 [node name="DoubleJumpPickup" parent="." instance=ExtResource("6_pickup")]
 position = Vector2(920, 262)
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="WalkerGround" parent="Enemies" instance=ExtResource("7_enemy")]
+position = Vector2(780, 280)
+
+[node name="WalkerLedge" parent="Enemies" instance=ExtResource("7_enemy")]
+position = Vector2(260, 234)
 
 [node name="Player" parent="." instance=ExtResource("3_player")]
 position = Vector2(100, 280)

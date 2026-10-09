@@ -113,7 +113,8 @@ game/          Conteúdo do jogo, organizado POR FEATURE
   level.gd       Level: contrato (classe base) de toda fase
   game_debug_commands.gd  Comandos de console e watches de gameplay
   hazards/       DamageZone (espinhos)
-  props/         TrainingDummy (alvo de treino)
+  props/         TrainingDummy (alvo de treino), AbilityPickup (item de habilidade)
+  enemies/       Enemy (base genérica), EnemyStats e estados de IA compartilhados
   world/         SolidBlock (greybox)
   platformer/    MÓDULO side-scrolling: player, estados, stats, fase, testes
   topdown/       MÓDULO top-down: player, estados, stats, pilar, fase, testes
@@ -201,7 +202,7 @@ Os comandos de gameplay ficam em `game/game_debug_commands.gd`. O `core/` só te
 ### Padrões usados
 
 - **Call down, signal up**: o pai chama métodos dos filhos e os filhos emitem sinais. O `EventBus` só entra quando os sistemas não se conhecem (ex.: a HUD nunca referencia o Player).
-- **Composição com componentes**: vida e dano são nós reutilizáveis, iguais nos dois gêneros. A `HurtboxComponent` ignora hitboxes do mesmo `owner`, então o ataque do player não fere o próprio player.
+- **Composição com componentes**: vida e dano são nós reutilizáveis, iguais nos dois gêneros. Hitboxes e hurtboxes têm um **`team`** (`player`, `enemy` ou vazio = neutro): uma hurtbox ignora golpes do próprio time e da própria entidade (`owner`). Inimigos não se ferem entre si, o player não se fere, e espinhos (neutros) ferem todos.
 - **State Machine baseada em nós**: cada estado é um nó filho com `enter/exit/update/physics_update/handle_input`. O player expõe primitivas de movimento e os estados decidem as transições.
 - **Data-driven com Resources**: `PlatformerStats` e `TopDownStats` são `Resource`s. Crie `.tres` diferentes por personagem ou power-up.
 - **Input abstrato**: o gameplay só lê **ações** do InputMap. Teclado, gamepad e toque geram as mesmas ações. A fase define o que os botões de toque A/B/C fazem (`Level.touch_actions`) e quais dicas de botão a HUD mostra (`Level.hud_hint_actions`).
@@ -243,6 +244,25 @@ Estados: **Idle → Walk → Dash → Attack**.
 - **Mira twin-stick**, com prioridade **analógico direito → mouse → direção do movimento**. O mouse só assume a mira depois que o jogador o mexe ou clica de verdade (`InputManager.using_mouse`), então quem joga só no teclado continua mirando para onde anda. Ao usar o gamepad, a mira volta ao analógico. Um indicador amarelo mostra a direção quando a mira vem do mouse ou do analógico.
 - **Dash** com velocidade fixa, i-frames (`HealthComponent.grant_invulnerability`) e cooldown. Vai na direção do movimento, ou na da mira se o player estiver parado.
 - **Ataque** corpo a corpo na direção da mira. A hitbox fica travada no ângulo inicial durante `attack_duration`.
+
+### Inimigos
+
+Uma base genérica (`game/enemies/`) serve aos dois gêneros. A IA é uma máquina de estados compartilhada:
+
+```
+Patrol ──vê o player──▶ Chase ──perto──▶ Windup ──▶ Attack (bote) ──▶ Recover ──▶ Chase/Patrol
+                                (qualquer estado) ──levou dano──▶ Hurt ──▶ Chase/Patrol
+```
+
+- **Percepção:** o inimigo nota o player dentro de `detection_radius` **com linha de visão** (raycast contra o cenário). Ele só desiste fora de `lose_target_radius`, que é maior; essa **histerese** evita ficar alternando entre patrulhar e perseguir.
+- **Windup (aviso):** antes do bote o inimigo para, agacha e avermelha por `windup_time`. É o que torna o golpe **justo**: o jogador vê e reage. O **Recover** depois do bote é a janela de contra-ataque.
+- **Dano:** por **contato** (`ContactHitbox`) e pelo **bote** (`AttackHitbox`), os dois no time `enemy`. Ao apanhar, o inimigo sofre knockback e fica atordoado (`Hurt`), o que cancela o ataque. Na morte, emite `EventBus.enemy_died`, solta faíscas e poeira e some.
+- **`EnemyStats` (.tres por tipo):** velocidades, raios de percepção, tempos de windup, bote e recuperação, knockback.
+- **Por gênero, só o movimento muda:**
+  - **`PlatformerEnemy`** (walker): gravidade, vira em **paredes e beiradas**, não despenca ao perseguir, só ataca no mesmo "andar".
+  - **`TopDownEnemy`** (slime): vagueia perto da origem com pausas e persegue e ataca em 2D.
+
+As fases de exemplo têm 2 inimigos cada. No overlay F3, o watch "Inimigos" mostra quantos existem e quantos estão perseguindo.
 
 ### Remapeamento de controles
 
@@ -295,7 +315,7 @@ Use `PhysicsLayers.HITBOXES` etc. no código em vez de números mágicos.
 
 - **Nova fase**: duplique a fase do seu módulo (a raiz usa `level.gd`) e aponte `ScenePaths.FIRST_LEVEL`, ou carregue-a via `game.level_path`.
 - **Novo estado do player**: crie um script `extends PlatformerState` (ou `TopDownState`), adicione um nó filho em `Player/StateMachine` e chame `transition_to(&"NomeDoNo")`.
-- **Novo inimigo**: `CharacterBody2D` + `HealthComponent` + `HurtboxComponent` (layer 5, mask 4) + `HitboxComponent` (layer 4) + `StateMachine`. Veja `TrainingDummy` como exemplo mínimo.
+- **Novo tipo de inimigo**: duplique `platformer_enemy.tscn` (ou `topdown_enemy.tscn`), troque o visual e crie um `EnemyStats` (.tres) com os números dele. Para outro comportamento de movimento, estenda `Enemy` e sobrescreva `patrol_direction`/`direction_to_target`/`move_toward_direction`.
 - **Nova opção de configuração**: adicione o padrão em `Settings.DEFAULTS`, trate em `Settings._apply` e crie o controle em `settings_menu`.
 - **Novo texto**: adicione uma linha em `translations.csv` e use a chave no `text` do Control.
 - **Novo módulo de gênero** (ex.: twin-stick, puzzle): crie `game/<genero>/` com fase, player e `tests/<genero>_smoke_test.gd`, e registre em `tools/genre_setup.gd` (`GENRES`) e em `tests/smoke_test.gd` (`GENRE_SUITES`).
