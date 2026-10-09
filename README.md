@@ -2,6 +2,8 @@
 
 Template base para jogos **2D** em **Godot 4.7+**, pensado para **PC e celular** ao mesmo tempo, com arquitetura modular e padrões recomendados pela documentação oficial e pela comunidade indie. Traz dois **módulos de gênero**, **side-scrolling (platformer)** e **top-down**, sobre a mesma base.
 
+> 📘 **Primeira vez usando o template?** Comece pelo **[MANUAL.md](MANUAL.md)**: passo a passo para criar um jogo novo, fazer as modificações iniciais, construir fases, inimigos e habilidades, publicar builds, e dicas para aproveitar tudo.
+>
 > O que ainda não foi implementado está descrito em [IMPROVEMENTS.md](IMPROVEMENTS.md).
 
 ## Começando um jogo novo
