@@ -108,6 +108,41 @@ git push
 
 Abra a aba **Actions** do repositório e confira o smoke test verde.
 
+### Passo 6: configurar o repositório no GitHub (uma vez por repositório)
+
+> A interface do GitHub muda com o tempo. Os nomes abaixo são os da documentação oficial em outubro de 2026. Se algo não bater, procure o nome equivalente ou consulte o link da documentação de cada item.
+
+Todas as configurações começam igual: na página do repositório, clique na aba **Settings** (engrenagem, no topo, à direita de *Insights*; se não aparecer, abra o menu **…**). A **barra lateral esquerda** é dividida em grupos.
+
+**a) Segurança: reporte privado de vulnerabilidades e Dependabot**
+1. Na barra lateral, no grupo **Security and quality**, clique em **Advanced Security**. Antes essa página se chamava *Code security and analysis*.
+2. Na linha **Private vulnerability reporting**, clique em **Enable**. Isso só existe em repositórios **públicos**.
+3. Na mesma página, ative também **Dependabot alerts** (e **Dependabot security updates**, se aparecer).
+
+Documentação: [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/configuring-private-vulnerability-reporting-for-a-repository) · [Dependabot alerts](https://docs.github.com/en/code-security/dependabot/dependabot-alerts/configuring-dependabot-alerts)
+
+**b) Proteger a branch `main`**
+1. Na barra lateral, no grupo **Code, planning, and automation**, clique em **Rules** → **Rulesets**.
+2. Clique em **New ruleset** → **New branch ruleset**.
+3. **Ruleset name:** `Proteger main`.
+4. **Enforcement status:** troque de *Disabled* para **Active**. O padrão é desligado, e sem essa troca a regra não vale.
+5. **Target branches:** clique em **Add target** → **Include default branch**.
+6. Em **Branch rules**, deixe marcados **Restrict deletions** e **Block force pushes**. Isso já impede apagar a `main` ou reescrever o histórico.
+7. Clique em **Create**.
+
+Quando outras pessoas forem mandar PRs, volte nessa regra e marque também **Require status checks to pass**. Adicione o check **Smoke test**, que só aparece na lista depois de rodar ao menos uma vez. Em **Bypass list**, adicione **Repository admin**: assim você continua podendo dar `git push` direto na `main`. Sem isso, um push direto seria recusado, porque o commit ainda não tem o check aprovado.
+
+Documentação: [rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository)
+
+**c) Descrição e tópicos (para outras pessoas acharem o projeto)**
+1. Na **página inicial** do repositório (fora de Settings), coluna da direita, no quadro **About**, clique na **engrenagem ⚙**.
+2. **Description:** uma frase curta.
+3. **Topics:** digite cada tópico e aperte **Enter** (ex.: `godot`, `godot4`, `gdscript`, `gamedev`, `2d`).
+4. Clique em **Save changes**.
+
+**d) Template repository (só no repositório do template)**
+- *Settings* → grupo **General** (a primeira página) → logo abaixo do nome do repositório, marque **Template repository**. Nos repositórios dos jogos, deixe desmarcado.
+
 ---
 
 ## 4. Modificações iniciais: a identidade do jogo
@@ -486,6 +521,7 @@ git cherry-pick <hash-do-commit>
 - [ ] `GAME_SLUG` no CI
 - [ ] README com a descrição do jogo, badges, `LICENSE`, `CHANGELOG.md` e `CODEOWNERS` do jogo
 - [ ] Primeiro commit e push → CI verde na aba Actions
+- [ ] GitHub configurado: Advanced Security (vulnerabilidades + Dependabot), ruleset da `main`, descrição e tópicos ([Passo 6](#passo-6-configurar-o-repositório-no-github-uma-vez-por-repositório))
 - [ ] (Se for publicar no Android) keystore de release + 3 secrets no GitHub
 - [ ] Primeira fase própria em `ScenePaths.FIRST_LEVEL`
 - [ ] Primeira tag `v0.1.0` → Release com os builds
