@@ -8,13 +8,20 @@ extends Node
 @export_file("*.tscn") var level_path := ScenePaths.FIRST_LEVEL
 @export var respawn_delay := 1.0
 
+## Se definido, substitui `level_path` (usado pelo comando de debug `level`;
+## persiste entre recarregamentos da cena até ser limpo).
+static var level_override := ""
+
 @onready var _world: Node2D = %World
 @onready var _touch_controls: TouchControls = %TouchControls
 
 
 func _ready() -> void:
+	if not level_override.is_empty():
+		level_path = level_override
 	var packed := load(level_path) as PackedScene
 	assert(packed != null, "Fase não encontrada: %s" % level_path)
+	Log.info("Fase carregada: %s" % level_path.get_file())
 	var level := packed.instantiate() as Level
 	_world.add_child(level)
 	_touch_controls.configure(level.touch_primary_action, level.touch_secondary_action)

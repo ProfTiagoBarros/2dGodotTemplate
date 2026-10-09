@@ -82,7 +82,9 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 
 ## 10. Performance e ferramentas
 
-- [ ] **Overlay de debug** (FPS, estado atual da FSM, input ativo) habilitado só em debug build, e um **Logger** com níveis.
+- [x] ~~Overlay de debug, console de comandos e Log com níveis~~: implementados (`DebugTools`, `Log`, `ui/debug/`).
+- [ ] **Console/overlay**: comando `screenshot`, gráfico de frame time no overlay, console "flutuante" redimensionável e salvar o conteúdo do console num arquivo para anexar em bug reports.
+- [ ] **Crash/bug report remoto** em builds de teste: enviar `DebugTools.get_console_text()` + versão + dispositivo para um endpoint (ex.: Sentry, que tem SDK para Godot) com consentimento do jogador.
 - [ ] Opção de **limite de FPS** (30/60/ilimitado) para economizar bateria no mobile, e `low_processor_mode` nos menus.
 - [ ] Profiling em aparelhos Android de entrada (draw calls, overdraw de partículas, tamanho de texturas).
 - [ ] Após o primeiro import, trocar os caminhos `res://` de `ScenePaths` por `uid://`, que sobrevivem a renomeações.

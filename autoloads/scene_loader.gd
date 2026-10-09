@@ -28,13 +28,14 @@ func _ready() -> void:
 
 func change_scene(path: String, fade_time: float = DEFAULT_FADE_TIME) -> void:
 	if is_changing:
-		push_warning("SceneLoader: troca de cena já em andamento.")
+		Log.warn("SceneLoader: troca de cena já em andamento.")
 		return
 	if not ResourceLoader.exists(path):
-		push_error("SceneLoader: cena não encontrada: %s" % path)
+		Log.error("SceneLoader: cena não encontrada: %s" % path)
 		return
 
 	is_changing = true
+	Log.debug("SceneLoader: carregando %s" % path)
 	scene_change_started.emit(path)
 	_fade.mouse_filter = Control.MOUSE_FILTER_STOP
 
@@ -68,7 +69,7 @@ func _wait_for_load(path: String) -> PackedScene:
 			load_progress.emit(1.0)
 			return ResourceLoader.load_threaded_get(path) as PackedScene
 		if status != ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-			push_error("SceneLoader: falha ao carregar %s" % path)
+			Log.error("SceneLoader: falha ao carregar %s" % path)
 			return null
 		load_progress.emit(float(progress[0]) if not progress.is_empty() else 0.0)
 		await get_tree().process_frame

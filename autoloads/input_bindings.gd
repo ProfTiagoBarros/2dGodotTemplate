@@ -118,7 +118,7 @@ static func kind_of(event: InputEvent) -> int:
 func rebind(action: StringName, kind: Kind, event: InputEvent) -> void:
 	var new_event := _normalized(event)
 	if new_event == null or kind_of(new_event) != kind:
-		push_warning("InputBindings: evento incompatível com o tipo de dispositivo.")
+		Log.warn("InputBindings: evento incompatível com o tipo de dispositivo.")
 		return
 	var old_event := get_binding(action, kind)
 	if old_event != null and old_event.is_match(new_event):

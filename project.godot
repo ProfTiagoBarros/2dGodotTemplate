@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+Log="*res://autoloads/log.gd"
 EventBus="*res://autoloads/event_bus.gd"
 Settings="*res://autoloads/settings.gd"
 SaveSystem="*res://autoloads/save_system.gd"
@@ -27,6 +28,7 @@ AudioManager="*res://autoloads/audio_manager.gd"
 InputManager="*res://autoloads/input_manager.gd"
 InputBindings="*res://autoloads/input_bindings.gd"
 SceneLoader="*res://autoloads/scene_loader.gd"
+DebugTools="*res://autoloads/debug_tools.gd"
 
 [debug]
 

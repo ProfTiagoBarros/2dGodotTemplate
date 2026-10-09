@@ -60,7 +60,7 @@ func erase_value(section: String, key: String) -> void:
 func save() -> void:
 	var err := _config.save(PATH)
 	if err != OK:
-		push_warning("Settings: falha ao salvar (%s)" % error_string(err))
+		Log.warn("Settings: falha ao salvar (%s)" % error_string(err))
 
 
 func apply_all() -> void:
@@ -79,7 +79,7 @@ func _load() -> void:
 		return
 	var saved := ConfigFile.new()
 	if saved.load(PATH) != OK:
-		push_warning("Settings: arquivo corrompido, usando padrões.")
+		Log.warn("Settings: arquivo corrompido, usando padrões.")
 		return
 	for section: String in saved.get_sections():
 		for key: String in saved.get_section_keys(section):

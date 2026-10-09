@@ -12,6 +12,8 @@ signal died
 @export_range(0.0, 5.0, 0.05) var invulnerability_time := 0.0
 
 var current := 0
+## Ignora todo dano (cheat de debug, cutscenes).
+var god_mode := false
 var _invulnerable_left := 0.0
 
 
@@ -25,7 +27,16 @@ func is_dead() -> bool:
 
 
 func is_invulnerable() -> bool:
-	return _invulnerable_left > 0.0
+	return god_mode or _invulnerable_left > 0.0
+
+
+## Morte imediata, ignorando i-frames e god mode (abismos, comandos de debug).
+func kill() -> void:
+	if is_dead():
+		return
+	current = 0
+	health_changed.emit(current, max_health)
+	died.emit()
 
 
 ## Restaura a vida cheia, inclusive após a morte (respawn, checkpoints).

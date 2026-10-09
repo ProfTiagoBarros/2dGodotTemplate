@@ -21,6 +21,7 @@ var _checks := 0
 func _ready() -> void:
 	_test_save_system()
 	await _test_input_bindings()
+	await _test_debug_tools()
 
 	var suites_run := 0
 	for path: String in GENRE_SUITES:
@@ -137,6 +138,71 @@ func _test_input_bindings() -> void:
 	check(InputMap.event_is_action(key_event(KEY_ESCAPE), &"pause")
 			and Settings.get_value("input", "pause") == null, "Restaurar padrões")
 	InputBindings.apply_snapshot(snapshot)
+
+
+func _test_debug_tools() -> void:
+	print("\n== debug_tools ==")
+	if not DebugTools.enabled:
+		print("  (release build: DebugTools desativado, testes pulados)")
+		return
+
+	# Log + captura da saída do engine pelo console.
+	Log.info("smoke-marker-info")
+	push_warning("smoke-marker-warning")
+	# process_frame é emitido ANTES dos _process: espere alguns frames para o DebugTools drenar.
+	for i in 3:
+		await get_tree().process_frame
+	var console_text := DebugTools.get_console_text()
+	check("INFO: smoke-marker-info" in console_text, "Console captura o Log")
+	check("AVISO: smoke-marker-warning" in console_text, "Console captura avisos do engine")
+	var previous_level := Log.min_level
+	Log.min_level = Log.LogLevel.WARN
+	Log.info("smoke-marker-filtered")
+	for i in 3:
+		await get_tree().process_frame
+	check(not "smoke-marker-filtered" in DebugTools.get_console_text(), "Log filtra abaixo do nível mínimo")
+	Log.min_level = previous_level
+
+	# Comandos genéricos.
+	check("god" in DebugTools.execute("help"), "help lista também os comandos do jogo")
+	check("desconhecido" in DebugTools.execute("comando_que_nao_existe"), "Comando desconhecido é avisado")
+	DebugTools.execute("timescale 0.5")
+	check(is_equal_approx(Engine.time_scale, 0.5), "timescale altera Engine.time_scale")
+	DebugTools.execute("timescale 1")
+
+	# Teclas: F3 (overlay) e F1 (console, que pausa o jogo).
+	var game := await spawn_game(ScenePaths.FIRST_LEVEL)
+	Input.parse_input_event(key_event(KEY_F3))
+	for i in 20:
+		await get_tree().process_frame
+	check(DebugTools.is_overlay_visible(), "F3 abre o overlay")
+	var overlay_text := ((DebugTools.get("_overlay") as Node).find_child("StatsLabel") as Label).text
+	check("FPS" in overlay_text and "Vida:" in overlay_text and "Estado:" in overlay_text,
+			"Overlay mostra métricas e watches do jogo")
+	DebugTools.toggle_overlay()
+
+	Input.parse_input_event(key_event(KEY_F1))
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(DebugTools.is_console_open() and get_tree().paused, "F1 abre o console e pausa o jogo")
+	DebugTools.submit_console("fps 30")
+	check(Engine.max_fps == 30 and "> fps 30" in DebugTools.get_console_text(), "Console executa o que é digitado")
+	DebugTools.execute("fps 0")
+	DebugTools.close_console()
+	check(not get_tree().paused, "Fechar o console despausa")
+
+	# Comandos de gameplay (genéricos entre gêneros).
+	var health := get_tree().get_first_node_in_group(&"player").get(&"health") as HealthComponent
+	DebugTools.execute("god")
+	check(health.god_mode and not health.take_damage(1), "god: player não leva dano")
+	DebugTools.execute("god")
+	check(not health.god_mode, "god de novo desliga")
+	DebugTools.execute("tp 123 45")
+	var player := get_tree().get_first_node_in_group(&"player") as Node2D
+	check(player.global_position.is_equal_approx(Vector2(123, 45)), "tp teleporta o player")
+	check(ScenePaths.FIRST_LEVEL.get_file().get_basename() in DebugTools.execute("level"), "level lista as fases")
+	check("não encontrada" in DebugTools.execute("level fase_inexistente"), "level avisa fase inexistente")
+	await despawn(game)
 
 
 func key_event(keycode: Key) -> InputEventKey:

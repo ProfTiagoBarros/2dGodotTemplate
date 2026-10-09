@@ -106,9 +106,11 @@ core/          Código reutilizável e agnóstico de jogo/gênero
   camera/        GameCamera (screen shake por trauma)
   utils/         MathUtils, PlatformUtils
   constants/     ScenePaths, PhysicsLayers
+  debug/         ConsoleLogger (captura a saída do engine para o console)
 game/          Conteúdo do jogo, organizado POR FEATURE
   game.tscn      Cena de gameplay (qualquer gênero): fase + HUD + toque + pausa
   level.gd       Level: contrato (classe base) de toda fase
+  game_debug_commands.gd  Comandos de console e watches de gameplay
   hazards/       DamageZone (espinhos)
   props/         TrainingDummy (alvo de treino)
   world/         SolidBlock (greybox)
@@ -116,6 +118,7 @@ game/          Conteúdo do jogo, organizado POR FEATURE
   topdown/       MÓDULO top-down: player, estados, stats, pilar, fase, testes
 ui/            main_menu/ pause_menu/ settings_menu/ controls_menu/ hud/ touch_controls/
   components/    SafeAreaMargin (notch), ActionPromptLabel (dica de botão)
+  debug/         DebugOverlay (F3) e DebugConsole (F1)
 localization/  translations.csv (en, pt_BR)
 assets/        Assets compartilhados (sprites, audio, fonts, shaders)
 tests/         Runner do smoke test
@@ -132,6 +135,7 @@ tools/         Setup de gênero (rode uma vez e pode apagar)
 
 | Autoload | Responsabilidade |
 |---|---|
+| `Log` | Log com níveis (DEBUG/INFO/WARN/ERROR); em release só WARN+ |
 | `EventBus` | Sinais globais para eventos transversais (Player → HUD, qualquer coisa → câmera) |
 | `Settings` | Opções do usuário em `user://settings.cfg` (áudio, vídeo, idioma, toque) |
 | `SaveSystem` | Save JSON versionado, escrita atômica + `.bak`, migração por versão |
@@ -139,6 +143,40 @@ tools/         Setup de gênero (rode uma vez e pode apagar)
 | `InputManager` | Detecta o dispositivo ativo (teclado/mouse, gamepad, toque) e se o mouse está em uso |
 | `InputBindings` | Remapeamento de controles, persistência dos atalhos e nomes/dicas de botões |
 | `SceneLoader` | Troca de cena com fade e carregamento em thread |
+| `DebugTools` | Overlay F3, console F1 e registro de comandos/watches. **Só em debug builds** |
+
+### Ferramentas de debug
+
+Disponíveis no editor e em **exports debug**, como o APK de teste do CI. Em builds de release o `DebugTools` não carrega nada.
+
+| Atalho | O que faz |
+|---|---|
+| **F3** | Overlay: FPS, tempo de frame, draw calls, nós, memória, cena, dispositivo de input e os *watches* do jogo (posição, estado da FSM, vida…) |
+| **F1** ou **`** | Console de comandos. **Pausa o jogo** enquanto aberto. Tab completa, ↑/↓ navega no histórico, Esc fecha |
+| **3 dedos** na tela | Abre o console no celular |
+
+O console também mostra **toda a saída do jogo**: `print`, `Log`, avisos e erros do engine com arquivo e linha do script. Assim dá para ver erros no celular sem cabo nem editor.
+
+**Comandos inclusos:**
+- Genéricos: `help`, `clear`, `overlay`, `fps <n>`, `timescale <x>`, `collisions` (mostra as formas de colisão), `log <nível>`, `lang <locale>`, `quit`.
+- De gameplay: `god`, `heal [n]`, `kill`, `tp <x> <y>` (sem argumentos, vai até o mouse), `level [nome]` (lista ou carrega uma fase de qualquer pasta `levels/`), `reload`, `save [slot]`, `load [slot]`.
+
+**Para adicionar comandos e watches**, cada sistema registra os próprios:
+
+```gdscript
+func _ready() -> void:
+	DebugTools.register_command("gold", _cmd_gold, "gold <n> - define o ouro")
+	DebugTools.watch("Inimigos", func() -> String: return str(get_tree().get_node_count_in_group("enemy")))
+
+
+func _cmd_gold(args: PackedStringArray) -> String:
+	gold = args[0].to_int() if not args.is_empty() else gold
+	return "Ouro: %d" % gold
+```
+
+Os comandos de gameplay ficam em `game/game_debug_commands.gd`. O `core/` só tem os genéricos, então continua sem saber nada do jogo.
+
+**Log:** use `Log.debug/info/warn/error("mensagem")` no lugar de `print`/`push_warning`. Cada linha sai com horário e nível. Em release só WARN e ERROR aparecem, e o nível muda em tempo de execução com `log <nível>`.
 
 ### Padrões usados
 

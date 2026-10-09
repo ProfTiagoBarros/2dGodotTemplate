@@ -30,7 +30,7 @@ func _ready() -> void:
 func transition_to(state_name: StringName, data: Dictionary = {}) -> void:
 	var next: State = _states.get(state_name)
 	if next == null:
-		push_error("StateMachine: estado inexistente '%s'." % state_name)
+		Log.error("StateMachine: estado inexistente '%s'." % state_name)
 		return
 	if next == current_state:
 		return

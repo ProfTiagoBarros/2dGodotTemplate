@@ -44,7 +44,7 @@ func save_game(slot: int = current_slot) -> bool:
 	var tmp_path := path + ".tmp"
 	var file := FileAccess.open(tmp_path, FileAccess.WRITE)
 	if file == null:
-		push_error("SaveSystem: falha ao abrir %s (%s)" % [tmp_path, error_string(FileAccess.get_open_error())])
+		Log.error("SaveSystem: falha ao abrir %s (%s)" % [tmp_path, error_string(FileAccess.get_open_error())])
 		return false
 	file.store_string(JSON.stringify(payload, "\t"))
 	file.close()
@@ -56,9 +56,10 @@ func save_game(slot: int = current_slot) -> bool:
 		DirAccess.rename_absolute(path, path + ".bak")
 	var err := DirAccess.rename_absolute(tmp_path, path)
 	if err != OK:
-		push_error("SaveSystem: falha ao finalizar save (%s)" % error_string(err))
+		Log.error("SaveSystem: falha ao finalizar save (%s)" % error_string(err))
 		return false
 
+	Log.debug("SaveSystem: slot %d salvo" % slot)
 	game_saved.emit(slot)
 	return true
 
@@ -75,6 +76,7 @@ func load_game(slot: int = 0) -> bool:
 	data = payload.get("data", {}) as Dictionary
 	current_slot = slot
 	get_tree().call_group(PERSIST_GROUP, &"load_state", data)
+	Log.debug("SaveSystem: slot %d carregado" % slot)
 	game_loaded.emit(slot)
 	return true
 
@@ -96,7 +98,7 @@ func _read_json(path: String) -> Dictionary:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is Dictionary:
 		return parsed
-	push_warning("SaveSystem: save inválido em %s" % path)
+	Log.warn("SaveSystem: save inválido em %s" % path)
 	return {}
 
 
