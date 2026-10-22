@@ -17,6 +17,11 @@ signal target_changed(target: Node2D)
 ## Intervalo entre checagens de percepção (s). O raycast de linha de visão é a
 ## parte cara; 10 Hz é imperceptível e funciona como "tempo de reação".
 @export var perception_interval := 0.1
+## Altura dos "olhos" acima da origem (pés). Também é o ponto mirado no alvo,
+## para a linha de visão não raspar no chão.
+@export var eye_height := 6.0
+## Tremor de tela quando o inimigo morre.
+@export_range(0.0, 1.0, 0.05) var death_shake := 0.25
 
 ## Player perseguido no momento (null = nenhum).
 var target: Node2D
@@ -71,12 +76,12 @@ func update_target() -> void:
 
 func has_line_of_sight(node: Node2D) -> bool:
 	var query := PhysicsRayQueryParameters2D.create(
-			eye_position(), node.global_position + Vector2(0.0, -6.0), PhysicsLayers.WORLD, [get_rid()])
+			eye_position(), node.global_position + Vector2(0.0, -eye_height), PhysicsLayers.WORLD, [get_rid()])
 	return get_world_2d().direct_space_state.intersect_ray(query).is_empty()
 
 
 func eye_position() -> Vector2:
-	return global_position + Vector2(0.0, -6.0)
+	return global_position + Vector2(0.0, -eye_height)
 
 
 func can_attack_target() -> bool:
@@ -84,8 +89,8 @@ func can_attack_target() -> bool:
 
 
 func _is_alive(node: Node) -> bool:
-	var target_health := node.get(&"health") as HealthComponent
-	return target_health == null or not target_health.is_dead()
+	var character := node as Character
+	return character == null or not character.health.is_dead()
 
 #endregion
 
@@ -170,7 +175,7 @@ func set_attack_active(active: bool) -> void:
 
 func _on_hurt(_amount: int, _source: Node) -> void:
 	if not health.is_dead():
-		state_machine.transition_to(&"Hurt")
+		state_machine.transition_to(EnemyState.HURT)
 
 
 func _play_death() -> void:
@@ -180,7 +185,7 @@ func _play_death() -> void:
 	_hurtbox.set_deferred(&"monitoring", false)
 	GameFeel.spawn_effect(GameFeel.HIT_SPARKS, eye_position())
 	GameFeel.spawn_effect(GameFeel.DUST, global_position)
-	EventBus.camera_shake_requested.emit(0.25)
+	EventBus.camera_shake_requested.emit(death_shake)
 	var tween := create_tween()
 	tween.tween_property(squash, "scale", Vector2(1.6, 0.05), 0.15)
 	tween.tween_callback(queue_free)

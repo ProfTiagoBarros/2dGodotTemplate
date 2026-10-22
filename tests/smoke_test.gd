@@ -116,7 +116,7 @@ func _test_input_bindings() -> void:
 	InputBindings.rebind(Actions.PAUSE, kb, key_event(KEY_F10))
 	check(InputMap.event_is_action(key_event(KEY_F10), Actions.PAUSE), "Remapear: nova tecla dispara a ação")
 	check(not InputMap.event_is_action(key_event(KEY_ESCAPE), Actions.PAUSE), "Remapear: tecla antiga deixa de disparar")
-	check(Settings.get_value("input", "pause") is Array, "Remapeamento persistido no settings.cfg")
+	check(Settings.get_value(Settings.INPUT, Actions.PAUSE) is Array, "Remapeamento persistido no settings.cfg")
 	check(InputBindings.get_event_label(key_event(KEY_F10)) == "F10", "Nome legível da tecla")
 
 	# Conflito: F10 vai para `interact`, e `pause` recebe a tecla antiga de interact (E).
@@ -158,7 +158,7 @@ func _test_input_bindings() -> void:
 
 	InputBindings.reset_all()
 	check(InputMap.event_is_action(key_event(KEY_ESCAPE), Actions.PAUSE)
-			and Settings.get_value("input", "pause") == null, "Restaurar padrões")
+			and Settings.get_value(Settings.INPUT, Actions.PAUSE) == null, "Restaurar padrões")
 	InputBindings.apply_snapshot(snapshot)
 
 
@@ -229,18 +229,18 @@ func _test_debug_tools() -> void:
 
 func _test_game_feel() -> void:
 	print("\n== game_feel ==")
-	var hitstop_setting: Variant = Settings.get_value("game", "hitstop")
+	var hitstop_setting: Variant = Settings.get_value(Settings.GAME, Settings.HITSTOP)
 
 	# Hitstop: desacelera e restaura sozinho (tempo real).
-	Settings.set_value("game", "hitstop", true)
+	Settings.set_value(Settings.GAME, Settings.HITSTOP, true)
 	GameFeel.hitstop(0.1)
 	check(GameFeel.is_hitstop_active() and Engine.time_scale < 0.2, "Hitstop desacelera o jogo")
 	await real_seconds(0.2)
 	check(not GameFeel.is_hitstop_active() and is_equal_approx(Engine.time_scale, 1.0), "Hitstop restaura o time_scale")
-	Settings.set_value("game", "hitstop", false)
+	Settings.set_value(Settings.GAME, Settings.HITSTOP, false)
 	GameFeel.hitstop(0.1)
 	check(is_equal_approx(Engine.time_scale, 1.0), "Opção 'Pausa de Impacto' desligada ignora o hitstop")
-	Settings.set_value("game", "hitstop", hitstop_setting)
+	Settings.set_value(Settings.GAME, Settings.HITSTOP, hitstop_setting)
 
 	# Squash & stretch: conserva a área e volta ao normal.
 	var squash := SquashStretch.new()
@@ -283,8 +283,8 @@ func _test_security() -> void:
 	check(SafeConfig.parse('[game]\nx = ExtResource ("1")\n') == null, "Variações com espaço também são recusadas")
 	var valid := SafeConfig.parse('[audio]\nMusic=0.5\n[game]\nlocale="pt_BR"\n')
 	check(valid != null and is_equal_approx(float(valid.get_value("audio", "Music")), 0.5), "Config válida carrega normalmente")
-	check(Settings.is_valid_value("audio", "Music", 1) and not Settings.is_valid_value("video", "fullscreen", "sim")
-			and not Settings.is_valid_value("game", "chave_desconhecida", true), "Settings só aceita chaves conhecidas com o tipo certo")
+	check(Settings.is_valid_value(Settings.AUDIO, "Music", 1) and not Settings.is_valid_value(Settings.VIDEO, Settings.FULLSCREEN, "sim")
+			and not Settings.is_valid_value(Settings.GAME, "chave_desconhecida", true), "Settings só aceita chaves conhecidas com o tipo certo")
 
 	# Save adulterado/corrompido: tipos errados não podem derrubar o jogo.
 	var slot := TEST_SLOT + 1
@@ -378,6 +378,15 @@ func _test_review_regressions() -> void:
 	var slot := TEST_SLOT + 2
 	_write_text("%s/slot_%d.json" % [SaveSystem.SAVE_DIR, slot], '{"version": [1], "data": {}}')
 	check(SaveSystem.load_game(slot), "Save com 'version' adulterada carrega sem erro")
+	SaveSystem.delete_save(slot)
+
+	# Migração v1 -> v2: "platformer_abilities" vira PlayerCharacter.ABILITIES_SAVE_KEY.
+	_write_text("%s/slot_%d.json" % [SaveSystem.SAVE_DIR, slot],
+			'{"version": 1, "data": {"platformer_abilities": ["dash"]}}')
+	SaveSystem.load_game(slot)
+	var migrated: Variant = SaveSystem.data.get(PlayerCharacter.ABILITIES_SAVE_KEY)
+	check(migrated is Array and "dash" in migrated and not SaveSystem.data.has("platformer_abilities"),
+			"Migração v1→v2 move as habilidades para a chave nova")
 	SaveSystem.delete_save(slot)
 	SaveSystem.new_game(TEST_SLOT)
 

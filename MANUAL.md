@@ -249,10 +249,12 @@ No top-down, coloque personagens, inimigos e objetos altos dentro do nó `Entiti
 
 ### 5.5 Habilidades (metroidvania)
 
-O player do platformer tem uma lista de habilidades salva no save. Para criar uma nova, por exemplo **wall jump**:
+Todo player (`PlayerCharacter`) tem uma lista de habilidades salva no save. Para criar uma nova no platformer, por exemplo **wall jump**:
 
-1. Adicione o método no player (`platformer_player.gd`):
+1. Adicione a constante e o método no player (`platformer_player.gd`):
    ```gdscript
+   const ABILITY_WALL_JUMP := &"wall_jump"
+
    func wall_jump() -> void:
    	velocity = Vector2(get_wall_normal().x * stats.max_speed, -stats.jump_velocity)
    	face(signf(velocity.x))
@@ -260,7 +262,7 @@ O player do platformer tem uma lista de habilidades salva no save. Para criar um
    ```
 2. Use no estado de queda (`states/fall_state.gd`), antes das outras checagens de pulo:
    ```gdscript
-   if player.has_ability(&"wall_jump") and player.is_on_wall() and player.wants_to_jump():
+   if player.has_ability(PlatformerPlayer.ABILITY_WALL_JUMP) and player.is_on_wall() and player.wants_to_jump():
    	player.wall_jump()
    	return
    ```
@@ -290,7 +292,7 @@ func load_state(data: Dictionary) -> void:
 
 - Chame `SaveSystem.save_game()` nos momentos certos: checkpoint, item coletado, troca de fase.
 - O JSON converte números inteiros em decimais, então use `int(...)` ao ler. Para valores que o jogador poderia adulterar, prefira `SaveSystem.get_int("chave")`, que também trata tipos errados.
-- Mudou o formato do save depois de lançar? Aumente `SAVE_VERSION` e trate a conversão em `_migrate()` (`autoloads/save_system.gd`).
+- Mudou o formato do save depois de lançar? Aumente `SAVE_VERSION` e trate a conversão em `_migrate()` (`autoloads/save_system.gd`). A migração v1 → v2, que renomeia a chave das habilidades, serve de exemplo.
 
 ### 5.7 Textos e idiomas
 
@@ -326,10 +328,10 @@ Bons lugares para ligar sons: `jump()` e `start_dash()` do player, `EventBus.ene
 
 ### 5.10 Opções de configuração novas
 
-1. Adicione o valor padrão em `DEFAULTS` (`autoloads/settings.gd`).
+1. Crie a constante da chave em `autoloads/settings.gd` (ex.: `const MINHA_OPCAO := "minha_opcao"`) e adicione o valor padrão em `DEFAULTS`.
 2. Se a opção mudar algo do engine, aplique em `_apply()` no mesmo arquivo.
 3. Crie a linha na tela (`ui/settings_menu/settings_menu.tscn`) e ligue com `_bind_check` ou `_bind_option` em `settings_menu.gd`.
-4. Leia em qualquer lugar com `Settings.get_value("game", "minha_opcao")`.
+4. Leia em qualquer lugar com `Settings.get_value(Settings.GAME, Settings.MINHA_OPCAO)`. Nunca escreva seção ou chave como texto solto.
 
 ### 5.11 Game feel: quanto usar
 

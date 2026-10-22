@@ -1,7 +1,7 @@
 class_name TouchControls
 extends CanvasLayer
 ## Exibe os controles de toque conforme a opção do usuário
-## ("auto" = só quando o último input foi toque). As ações dos botões
+## (Settings.TOUCH_AUTO = só quando o último input foi toque). As ações dos botões
 ## A/B/C são definidas pela fase via `configure()`, então a mesma UI
 ## serve para platformer (pular/atacar/dash) e top-down (atacar/dash).
 
@@ -25,15 +25,15 @@ func configure(actions: Array[StringName]) -> void:
 
 
 func _refresh() -> void:
-	match str(Settings.get_value("game", "touch_controls")):
-		"always":
+	match str(Settings.get_value(Settings.GAME, Settings.TOUCH_CONTROLS)):
+		Settings.TOUCH_ALWAYS:
 			visible = true
-		"never":
+		Settings.TOUCH_NEVER:
 			visible = false
 		_:
 			visible = InputManager.is_touch()
 
 
 func _on_settings_changed(section: String, key: String, _value: Variant) -> void:
-	if section == "game" and key == "touch_controls":
+	if section == Settings.GAME and key == Settings.TOUCH_CONTROLS:
 		_refresh()

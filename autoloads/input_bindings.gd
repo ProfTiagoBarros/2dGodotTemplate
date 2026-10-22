@@ -15,7 +15,7 @@ signal bindings_changed
 enum Kind { KEYBOARD_MOUSE, GAMEPAD }
 enum PadFamily { XBOX, PLAYSTATION, NINTENDO }
 
-const SETTINGS_SECTION := "input"
+const SETTINGS_SECTION := Settings.INPUT
 
 ## Ações exibidas na tela de Controles (em ordem) -> chave de tradução do nome.
 ## Ações inexistentes no InputMap (ex.: removidas pelo setup de gênero) são puladas.

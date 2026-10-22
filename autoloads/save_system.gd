@@ -10,7 +10,7 @@ extends Node
 signal game_saved(slot: int)
 signal game_loaded(slot: int)
 
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 const SAVE_DIR := "user://saves"
 
 var data: Dictionary = {}
@@ -124,7 +124,14 @@ func _migrate(payload: Dictionary) -> Dictionary:
 	while version < SAVE_VERSION:
 		match version:
 			0:
-				pass # Exemplo: renomear/converter campos da v0 para a v1.
+				pass # v0 -> v1: sem mudanças de formato.
+			1:
+				# v1 -> v2: habilidades saíram do PlatformerPlayer para o
+				# PlayerCharacter (qualquer gênero) e a chave perdeu o prefixo.
+				var save_data: Variant = payload.get("data")
+				if save_data is Dictionary and (save_data as Dictionary).has("platformer_abilities"):
+					save_data["abilities"] = save_data["platformer_abilities"]
+					(save_data as Dictionary).erase("platformer_abilities")
 		version += 1
 	payload["version"] = SAVE_VERSION
 	return payload

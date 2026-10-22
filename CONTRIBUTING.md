@@ -17,7 +17,10 @@ Obrigado pelo interesse! Este template busca ser uma base enxuta, testada e bem 
 
 ## Convenções
 
+O guia completo, com princípios, padrões de projeto para jogos e o checklist de revisão, está no **[REVIEW_GUIDE.md](REVIEW_GUIDE.md)**. O essencial:
+
 - Siga o [guia de estilo oficial do GDScript](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html), com **tipagem estática** em tudo.
+- Sem **literais de identificador**: ações, grupos, estados, chaves de configuração e de save passam por constantes (`Actions`, `Groups`, `Settings`…).
 - Respeite a **regra dos módulos**: `core/`, `ui/`, `autoloads/` e a raiz de `game/` nunca referenciam `game/platformer/` nem `game/topdown/`.
 - Código novo de gameplay vem com **teste** na suíte do gênero (`game/<gênero>/tests/`) ou no runner geral (`tests/smoke_test.gd`).
 - Textos de interface são **chaves de tradução** em `localization/translations.csv`, em inglês e português.
@@ -42,7 +45,7 @@ Thanks for your interest! This template aims to be a lean, tested and well-docum
 
 1. **Open an issue** before large changes, using the bug or feature templates.
 2. Branch from `main` (e.g. `feat/flying-enemy`, `fix/double-jump`).
-3. Follow the conventions above. In short: static typing, the module rule, tests for new gameplay, translation keys for UI text, untrusted outside data (use `SafeConfig`), and docs updated in **both languages** plus the `CHANGELOG.md` *Unreleased* section.
+3. Follow the conventions above and the [review guide](REVIEW_GUIDE.en.md). In short: static typing, constants instead of identifier literals, the module rule, tests for new gameplay, translation keys for UI text, untrusted outside data (use `SafeConfig`), and docs updated in **both languages** plus the `CHANGELOG.md` *Unreleased* section.
 4. Make sure the smoke test passes: `godot --headless --path . res://tests/smoke_test.tscn`.
 5. Open a Pull Request and fill in the template checklist.
 

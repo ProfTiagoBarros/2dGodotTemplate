@@ -241,13 +241,13 @@ Todos os números ficam em `PlatformerStats`, nos grupos *Attack*, *Dash* e *Jum
 
 #### Habilidades (progressão metroidvania)
 
-O player tem uma lista `abilities`. Por padrão ela traz `attack` e `dash`; o `double_jump` começa bloqueado.
+Todo player (`PlayerCharacter`, de qualquer gênero) tem uma lista `abilities`. No platformer, a cena começa com `attack` e `dash`; o `double_jump` começa bloqueado. Os nomes ficam em constantes (`PlatformerPlayer.ABILITY_*`).
 
 - `has_ability()` controla o que pode ser usado; os estados consultam antes de agir.
 - `unlock_ability()` / `lock_ability()` alteram a lista. Destravar emite `EventBus.ability_unlocked`, e a HUD mostra "<habilidade> desbloqueado!".
 - O progresso é **salvo no SaveSystem**: o player está no grupo `Groups.PERSIST`, e o item faz autosave ao ser coletado.
 - **`AbilityPickup`** (`game/props/`) é o item coletável que destrava uma habilidade. Ele some sozinho se o player já a tiver. A fase de exemplo tem um item de pulo duplo e uma plataforma alta projetada para só ser alcançada com ele.
-- **Nova habilidade:** escolha um nome (ex.: `wall_jump`), cheque `player.has_ability(&"wall_jump")` no estado que a usa, coloque um `AbilityPickup` com `ability = &"wall_jump"` e adicione a chave `ABILITY_WALL_JUMP` em `translations.csv`.
+- **Nova habilidade:** crie a constante no player (ex.: `const ABILITY_WALL_JUMP := &"wall_jump"`), cheque `player.has_ability(PlatformerPlayer.ABILITY_WALL_JUMP)` no estado que a usa, coloque um `AbilityPickup` com `ability = &"wall_jump"` e adicione a chave `ABILITY_WALL_JUMP` em `translations.csv`.
 - Para testar, use o comando de debug `ability [nome] [on|off]`.
 
 ### Top-down
@@ -362,7 +362,7 @@ Arquivos em `user://` (configurações, saves) podem ser editados pelo jogador o
 
 ## Contribuindo
 
-Sugestões e correções são bem-vindas. Veja o [CONTRIBUTING.md](CONTRIBUTING.md) para o fluxo (issue → branch → PR com smoke test passando). Para reportar uma vulnerabilidade, **não abra issue pública**: siga o [SECURITY.md](SECURITY.md).
+Sugestões e correções são bem-vindas. Veja o [CONTRIBUTING.md](CONTRIBUTING.md) para o fluxo (issue → branch → PR com smoke test passando) e o [REVIEW_GUIDE.md](REVIEW_GUIDE.md) para as boas práticas, padrões de projeto e o checklist usados nas revisões de código e arquitetura. Para reportar uma vulnerabilidade, **não abra issue pública**: siga o [SECURITY.md](SECURITY.md).
 
 ## Créditos e uso de IA
 

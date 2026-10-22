@@ -10,6 +10,9 @@ extends Node
 ## shader deles. Filhos criados depois do _ready não são afetados.
 
 const SHADER := preload("res://core/feel/hit_flash.gdshader")
+## Uniforms do shader (hit_flash.gdshader).
+const FLASH_AMOUNT := &"flash_amount"
+const FLASH_COLOR := &"flash_color"
 
 @export var target: CanvasItem
 @export var health: HealthComponent
@@ -25,7 +28,7 @@ func _ready() -> void:
 		push_error("HitFlashComponent '%s': defina `target` no Inspector." % get_path())
 		return
 	_material.shader = SHADER
-	_material.set_shader_parameter(&"flash_color", flash_color)
+	_material.set_shader_parameter(FLASH_COLOR, flash_color)
 	target.material = _material
 	for child: Node in target.find_children("*", "CanvasItem", true, false):
 		var item := child as CanvasItem
@@ -44,11 +47,11 @@ func flash() -> void:
 
 
 func get_amount() -> float:
-	return float(_material.get_shader_parameter(&"flash_amount"))
+	return float(_material.get_shader_parameter(FLASH_AMOUNT))
 
 
 func _set_amount(amount: float) -> void:
-	_material.set_shader_parameter(&"flash_amount", amount)
+	_material.set_shader_parameter(FLASH_AMOUNT, amount)
 
 
 func _on_damaged(_amount: int, _source: Node) -> void:

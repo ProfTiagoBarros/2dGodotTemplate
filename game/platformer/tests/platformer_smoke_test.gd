@@ -47,7 +47,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	var ledge_walker := _spawn_enemy(game, Vector2(260.0, 234.0))
 	await t.frames(5)
 	var start_x := walker.global_position.x
-	t.check(walker.state_machine.current_state.name == &"Patrol", "Inimigo começa patrulhando")
+	t.check(walker.state_machine.current_state.name == EnemyState.PATROL, "Inimigo começa patrulhando")
 	await t.frames(240)
 	t.check(absf(walker.global_position.x - start_x) > 5.0, "Patrulha move o inimigo")
 	t.check(ledge_walker.is_on_floor() and absf(ledge_walker.global_position.y - 234.0) < 2.0,
@@ -59,14 +59,14 @@ func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	walker.state_machine.state_changed.connect(func(_from: StringName, to: StringName) -> void: states.append(to))
 	await _place(t, player, walker.global_position + Vector2(90.0, 0.0))
 	# Percepção roda a ~10 Hz: até 0,1 s de "tempo de reação".
-	var is_chasing := func() -> bool: return walker.state_machine.current_state.name == &"Chase" and walker.velocity.x > 0.0
+	var is_chasing := func() -> bool: return walker.state_machine.current_state.name == EnemyState.CHASE and walker.velocity.x > 0.0
 	t.check(await _wait_for(t, is_chasing, 20), "Ver o player faz o inimigo perseguir")
 	var health_before := player.health.current
 	for i in 150:
 		await t.frames(1)
 		if player.health.current < health_before:
 			break
-	t.check(&"Windup" in states and &"Attack" in states, "Inimigo avisa (windup) antes do bote")
+	t.check(EnemyState.WINDUP in states and EnemyState.ATTACK in states, "Inimigo avisa (windup) antes do bote")
 	t.check(player.health.current < health_before, "Inimigo causa dano no player")
 	player.health.revive()
 
@@ -82,7 +82,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 		await t.tap(Actions.ATTACK)
 		await t.frames(25)
 		if hit == 0:
-			t.check(&"Hurt" in states, "Golpe atordoa o inimigo (Hurt)")
+			t.check(EnemyState.HURT in states, "Golpe atordoa o inimigo (Hurt)")
 	t.check(killed.size() == 1, "3 golpes matam o inimigo (EventBus.enemy_died)")
 	await t.frames(30)
 	t.check(not is_instance_valid(walker), "Inimigo morto sai da cena")
@@ -149,7 +149,7 @@ func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 
 func _test_movement(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	t.check(player.is_on_floor(), "Player cai e para no chão")
-	t.check(player.state_machine.current_state.name == &"Idle", "Estado inicial é Idle")
+	t.check(player.state_machine.current_state.name == PlatformerState.IDLE, "Estado inicial é Idle")
 
 	var ground_y := player.global_position.y
 	await t.hold(Actions.JUMP, 12)
@@ -192,7 +192,7 @@ func _test_attacks(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	await t.frames(6)
 	t.check(dummy_health.current < before, "Ataque lateral acerta o alvo")
 	await t.frames(20)
-	t.check(not player.is_attacking() and player.state_machine.current_state.name != &"Attack",
+	t.check(not player.is_attacking() and player.state_machine.current_state.name != PlatformerState.ATTACK,
 			"Ataque termina e volta ao estado livre")
 
 	# Ataque para cima (segurando ↑).
@@ -222,7 +222,7 @@ func _test_dash(t: SmokeTest, player: PlatformerPlayer) -> void:
 	var start_x := player.global_position.x
 	await t.tap(Actions.DASH)
 	await t.frames(2)
-	t.check(player.state_machine.current_state.name == &"Dash", "Dash no chão")
+	t.check(player.state_machine.current_state.name == PlatformerState.DASH, "Dash no chão")
 	await t.frames(10)
 	t.check(player.global_position.x > start_x + 40.0, "Dash desloca o player")
 	t.check(not player.can_dash(), "Dash entra em cooldown")
@@ -250,8 +250,8 @@ func _test_abilities(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 	await t.frames(2)
 	t.check(player.has_ability(PlatformerPlayer.ABILITY_DOUBLE_JUMP) and not is_instance_valid(pickup),
 			"Item coletável destrava o pulo duplo")
-	var saved: Array = SaveSystem.data.get(PlatformerPlayer.SAVE_KEY, [])
-	t.check("double_jump" in saved, "Habilidade salva no SaveSystem (autosave)")
+	var saved: Array = SaveSystem.data.get(PlayerCharacter.ABILITIES_SAVE_KEY, [])
+	t.check(String(PlatformerPlayer.ABILITY_DOUBLE_JUMP) in saved, "Habilidade salva no SaveSystem (autosave)")
 	t.check((game.find_child("Toast", true, false) as Label).visible, "HUD avisa a habilidade nova")
 
 	await t.frames(40)
@@ -261,7 +261,7 @@ func _test_abilities(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 	await _place(t, player, Vector2(150.0, 280.0))
 	await t.tap(Actions.DASH)
 	await t.frames(2)
-	t.check(player.state_machine.current_state.name != &"Dash", "Habilidade bloqueada não é usada")
+	t.check(player.state_machine.current_state.name != PlatformerState.DASH, "Habilidade bloqueada não é usada")
 	player.unlock_ability(PlatformerPlayer.ABILITY_DASH)
 
 

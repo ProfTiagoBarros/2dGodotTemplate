@@ -5,9 +5,12 @@
 
 ## Checklist
 
+<!-- Guia de revisão / Review guide: REVIEW_GUIDE.md · REVIEW_GUIDE.en.md -->
+
 - [ ] Smoke test passa / Smoke test passes: `godot --headless --path . res://tests/smoke_test.tscn`
 - [ ] Testes novos para gameplay novo / New tests for new gameplay
 - [ ] Regra dos módulos respeitada (`core/`, `ui/`, `autoloads/` e a raiz de `game/` não referenciam os módulos de gênero) / Module rule respected
+- [ ] Sem literais de identificador (ações, grupos, estados, configurações, chaves de save) / No identifier literals
 - [ ] Dados de fora validados (`SafeConfig`, checagem de tipos) / Outside data validated
 - [ ] Docs atualizadas nos dois idiomas (README/MANUAL) e `CHANGELOG.md` (*Não lançado*) / Docs updated in both languages and `CHANGELOG.md` (*Unreleased*)
 - [ ] Mudanças no CI validadas com o actionlint / CI changes validated with actionlint

@@ -22,7 +22,7 @@ func _ready() -> void:
 
 
 func add_trauma(amount: float) -> void:
-	if not Settings.get_value("game", "screen_shake"):
+	if not Settings.get_value(Settings.GAME, Settings.SCREEN_SHAKE):
 		return
 	trauma = clampf(trauma + amount, 0.0, 1.0)
 

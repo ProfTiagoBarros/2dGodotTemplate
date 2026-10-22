@@ -6,6 +6,7 @@ extends Node
 ## AudioManager.play_sfx_at(stream, global_position)   # posicional 2D
 
 const SFX_POOL_SIZE := 12
+const MASTER_BUS := &"Master"
 const MUSIC_BUS := &"Music"
 const SFX_BUS := &"SFX"
 const UI_BUS := &"UI"

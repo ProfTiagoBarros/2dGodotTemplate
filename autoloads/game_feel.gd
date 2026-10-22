@@ -28,7 +28,7 @@ func _ready() -> void:
 ## pelo próprio time_scale. Chamadas sobrepostas estendem até o maior fim.
 ## Respeita a opção "Pausa de Impacto" (Settings: game/hitstop).
 func hitstop(duration: float = 0.06, slow_scale: float = 0.05) -> void:
-	if duration <= 0.0 or not Settings.get_value("game", "hitstop"):
+	if duration <= 0.0 or not Settings.get_value(Settings.GAME, Settings.HITSTOP):
 		return
 	if not is_hitstop_active():
 		_time_scale_before = Engine.time_scale

@@ -20,7 +20,7 @@ func run(t: SmokeTest) -> void:
 		enemy.queue_free()
 	await t.frames(1)
 
-	t.check(player.state_machine.current_state.name == &"Idle", "Estado inicial é Idle")
+	t.check(player.state_machine.current_state.name == TopDownState.IDLE, "Estado inicial é Idle")
 	var hud := game.find_child("HUD", true, false) as GameHUD
 	var expected_hints: Array[StringName] = [Actions.ATTACK, Actions.DASH, Actions.PAUSE]
 	t.check(hud.get_hint_actions() == expected_hints,
@@ -36,7 +36,7 @@ func run(t: SmokeTest) -> void:
 	Input.action_press(Actions.MOVE_DOWN)
 	await t.frames(40)
 	var diagonal_speed := player.velocity.length()
-	t.check(player.state_machine.current_state.name == &"Walk", "Estado Walk ao mover")
+	t.check(player.state_machine.current_state.name == TopDownState.WALK, "Estado Walk ao mover")
 	Input.action_release(Actions.MOVE_RIGHT)
 	Input.action_release(Actions.MOVE_DOWN)
 	t.check(diagonal_speed <= player.stats.max_speed + 1.0, "Diagonal normalizada (%.0f px/s)" % diagonal_speed)
@@ -50,7 +50,7 @@ func run(t: SmokeTest) -> void:
 	t.spawned_effects.clear()
 	await t.tap(Actions.DASH)
 	await t.frames(2) # o sinal physics_frame vem ANTES dos nós processarem
-	t.check(player.state_machine.current_state.name == &"Dash", "Estado Dash ativo")
+	t.check(player.state_machine.current_state.name == TopDownState.DASH, "Estado Dash ativo")
 	t.check(player.health.is_invulnerable(), "Dash concede invencibilidade")
 	t.check(not player.squash.scale.is_equal_approx(Vector2.ONE) and "dust_puff" in t.spawned_effects,
 			"Dash estica o personagem e solta poeira")
@@ -75,7 +75,7 @@ func run(t: SmokeTest) -> void:
 	t.check("hit_sparks" in t.spawned_effects, "Golpe que acerta solta faíscas")
 	t.check(player.health.current == player_health, "Ataque não fere o próprio player")
 	await t.frames(15)
-	t.check(player.state_machine.current_state.name == &"Idle", "Volta a Idle após o ataque")
+	t.check(player.state_machine.current_state.name == TopDownState.IDLE, "Volta a Idle após o ataque")
 
 	# Mira com analógico direito (twin-stick): o ataque sai na direção da mira.
 	Input.action_press(Actions.AIM_UP, 1.0)
@@ -133,7 +133,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: TopDownPlayer) -> void:
 	await t.frames(12) # percepção a ~10 Hz + aceleração
 
 	# Persegue em 2D (nos dois eixos) e ataca com aviso.
-	t.check(slime.state_machine.current_state.name == &"Chase", "Slime vê o player e persegue")
+	t.check(slime.state_machine.current_state.name == EnemyState.CHASE, "Slime vê o player e persegue")
 	var to_player := slime.global_position.direction_to(player.global_position)
 	t.check(slime.velocity.normalized().dot(to_player) > 0.9, "Perseguição vai direto ao player (2D)")
 	var health_before := player.health.current
@@ -141,7 +141,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: TopDownPlayer) -> void:
 		await t.frames(1)
 		if player.health.current < health_before:
 			break
-	t.check(&"Windup" in states and &"Attack" in states, "Slime avisa (windup) antes do bote")
+	t.check(EnemyState.WINDUP in states and EnemyState.ATTACK in states, "Slime avisa (windup) antes do bote")
 	t.check(player.health.current < health_before, "Slime causa dano no player")
 
 	# Matar: 3 golpes mirando no slime.
@@ -158,7 +158,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: TopDownPlayer) -> void:
 		await t.frames(2)
 		await t.tap(Actions.ATTACK)
 		await t.frames(25)
-	t.check(&"Hurt" in states, "Golpe atordoa o slime (Hurt)")
+	t.check(EnemyState.HURT in states, "Golpe atordoa o slime (Hurt)")
 	t.check(killed[0] == 1, "3 golpes matam o slime (EventBus.enemy_died)")
 	await t.frames(30)
 	t.check(not is_instance_valid(slime), "Slime morto sai da cena")

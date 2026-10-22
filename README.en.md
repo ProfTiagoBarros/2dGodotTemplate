@@ -241,13 +241,13 @@ All numbers live in `PlatformerStats`, in the *Attack*, *Dash* and *Jump* groups
 
 #### Abilities (metroidvania progression)
 
-The player has an `abilities` list. By default it has `attack` and `dash`; `double_jump` starts locked.
+Every player (`PlayerCharacter`, any genre) has an `abilities` list. In the platformer, the scene starts with `attack` and `dash`; `double_jump` starts locked. Names live in constants (`PlatformerPlayer.ABILITY_*`).
 
 - `has_ability()` gates what can be used; states check it before acting.
 - `unlock_ability()` / `lock_ability()` change the list. Unlocking emits `EventBus.ability_unlocked`, and the HUD shows "<ability> unlocked!".
 - Progress is **saved through SaveSystem**: the player is in the `Groups.PERSIST` group, and pickups autosave when collected.
 - **`AbilityPickup`** (`game/props/`) is the collectible that unlocks an ability. It removes itself if the player already has it. The example level has a double jump pickup and a high ledge designed to be reachable only with it.
-- **New ability:** pick a name (e.g. `wall_jump`), check `player.has_ability(&"wall_jump")` in the state that uses it, place an `AbilityPickup` with `ability = &"wall_jump"` and add the `ABILITY_WALL_JUMP` key to `translations.csv`.
+- **New ability:** create the constant in the player (e.g. `const ABILITY_WALL_JUMP := &"wall_jump"`), check `player.has_ability(PlatformerPlayer.ABILITY_WALL_JUMP)` in the state that uses it, place an `AbilityPickup` with `ability = &"wall_jump"` and add the `ABILITY_WALL_JUMP` key to `translations.csv`.
 - To test, use the debug command `ability [name] [on|off]`.
 
 ### Top-down
@@ -362,7 +362,7 @@ Files in `user://` (settings, saves) can be edited by the player or shared betwe
 
 ## Contributing
 
-Suggestions and fixes are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow (issue → branch → PR with a passing smoke test). To report a vulnerability, **don't open a public issue**: follow [SECURITY.md](SECURITY.md).
+Suggestions and fixes are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow (issue → branch → PR with a passing smoke test) and [REVIEW_GUIDE.en.md](REVIEW_GUIDE.en.md) for the best practices, design patterns and checklist used in code and architecture reviews. To report a vulnerability, **don't open a public issue**: follow [SECURITY.md](SECURITY.md).
 
 ## Credits and AI usage
 

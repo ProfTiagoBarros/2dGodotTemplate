@@ -1,8 +1,8 @@
 extends RefCounted
 ## Comandos de console e watches do overlay ligados ao gameplay.
 ## Carregado automaticamente pelo DebugTools (só em debug builds).
-## Genérico entre gêneros: acha o player pelo grupo "player" e usa duck typing
-## (`health`, `state_machine`, `velocity`), então funciona em qualquer módulo.
+## Genérico entre gêneros: usa só as bases PlayerCharacter/Enemy, então
+## funciona em qualquer módulo.
 
 const LEVELS_ROOT := "res://game"
 
@@ -31,13 +31,13 @@ func _tree() -> SceneTree:
 	return Engine.get_main_loop() as SceneTree
 
 
-func _player() -> CharacterBody2D:
-	return _tree().get_first_node_in_group(Groups.PLAYER) as CharacterBody2D
+func _player() -> PlayerCharacter:
+	return _tree().get_first_node_in_group(Groups.PLAYER) as PlayerCharacter
 
 
 func _health() -> HealthComponent:
 	var player := _player()
-	return player.get(&"health") as HealthComponent if player != null else null
+	return player.health if player != null else null
 
 
 ## Fases = cenas .tscn dentro de qualquer pasta "levels" em res://game.
@@ -88,17 +88,17 @@ func _cmd_kill(_args: PackedStringArray) -> String:
 
 func _cmd_ability(args: PackedStringArray) -> String:
 	var player := _player()
-	if player == null or not player.has_method(&"unlock_ability"):
-		return "O player atual não tem sistema de habilidades."
+	if player == null:
+		return "Nenhum player na cena."
 	if args.is_empty():
-		return "Habilidades: %s" % str(player.get(&"abilities"))
+		return "Habilidades: %s" % str(player.abilities)
 	var ability := StringName(args[0])
 	var turn_on := args.size() < 2 or args[1] != "off"
 	if turn_on:
-		player.call(&"unlock_ability", ability)
+		player.unlock_ability(ability)
 	else:
-		player.call(&"lock_ability", ability)
-	return "Habilidades: %s" % str(player.get(&"abilities"))
+		player.lock_ability(ability)
+	return "Habilidades: %s" % str(player.abilities)
 
 
 func _cmd_tp(args: PackedStringArray) -> String:
@@ -158,7 +158,7 @@ func _watch_player() -> String:
 
 func _watch_state() -> String:
 	var player := _player()
-	var machine := player.get(&"state_machine") as StateMachine if player != null else null
+	var machine := player.state_machine if player != null else null
 	if machine == null or machine.current_state == null:
 		return ""
 	return String(machine.current_state.name)
@@ -179,6 +179,6 @@ func _watch_enemies() -> String:
 		return ""
 	var chasing := 0
 	for enemy: Node in enemies:
-		if enemy.get(&"target") != null:
+		if (enemy as Enemy).target != null:
 			chasing += 1
 	return "%d (%d perseguindo)" % [enemies.size(), chasing]

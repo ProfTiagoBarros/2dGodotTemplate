@@ -9,6 +9,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), 
 
 ### Adicionado
 
+- `REVIEW_GUIDE.md` (PT/EN): guia de revisão de código e arquitetura, com princípios, boas práticas do Godot, padrões de projeto para jogos e checklist de PR.
 - `PauseController` (`core/utils/`): pausa coordenada por motivos (menu, console…). O jogo só despausa quando nenhum sistema pede pausa.
 
 ### Alterado
@@ -16,6 +17,8 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), 
 - Código duplicado entre players e inimigos extraído para as classes abstratas `Character` e `PlayerCharacter` (`game/characters/`). `PlatformerPlayer`, `TopDownPlayer` e `Enemy` agora só implementam movimento e os ganchos `@abstract` (`apply_knockback`, `get_facing_vector`, `_play_death`); esquecer um deles é erro de compilação. Tremor e hitstop de combate viraram propriedades exportadas (`hurt_shake`, `hit_hitstop`…).
 - Nomes de ações e grupos agora são constantes (`Actions.JUMP`, `Groups.PLAYER`…, em `core/constants/`). O smoke test falha se o InputMap tiver ação fora de `Actions.ALL`.
 - `SaveSystem.PERSIST_GROUP` foi removido; use `Groups.PERSIST`.
+- O sistema de habilidades saiu do `PlatformerPlayer` para o `PlayerCharacter` e vale para qualquer gênero. A chave do save passou a ser `abilities` (save v2); saves v1 são migrados automaticamente. `AbilityPickup` e os comandos de debug agora usam tipos (`PlayerCharacter`/`Enemy`) em vez de duck typing.
+- Seções e chaves de configuração viraram constantes (`Settings.GAME`, `Settings.HITSTOP`…), assim como nomes de estado, uniforms de shader e buses de áudio. `Enemy` ganhou `eye_height` e `death_shake` exportados no lugar de números fixos.
 - `Enemy` passou a ser `@abstract`: `patrol_direction`, `direction_to_target` e `move_toward_direction` são obrigatórios nas subclasses.
 
 ### Corrigido

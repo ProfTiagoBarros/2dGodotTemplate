@@ -249,10 +249,12 @@ In top-down, put characters, enemies and tall objects inside the `Entities` node
 
 ### 5.5 Abilities (metroidvania)
 
-The platformer player has a list of abilities stored in the save. To create a new one, for example **wall jump**:
+Every player (`PlayerCharacter`) has a list of abilities stored in the save. To create a new one in the platformer, for example **wall jump**:
 
-1. Add the method to the player (`platformer_player.gd`):
+1. Add the constant and the method to the player (`platformer_player.gd`):
    ```gdscript
+   const ABILITY_WALL_JUMP := &"wall_jump"
+
    func wall_jump() -> void:
    	velocity = Vector2(get_wall_normal().x * stats.max_speed, -stats.jump_velocity)
    	face(signf(velocity.x))
@@ -260,7 +262,7 @@ The platformer player has a list of abilities stored in the save. To create a ne
    ```
 2. Use it in the fall state (`states/fall_state.gd`), before the other jump checks:
    ```gdscript
-   if player.has_ability(&"wall_jump") and player.is_on_wall() and player.wants_to_jump():
+   if player.has_ability(PlatformerPlayer.ABILITY_WALL_JUMP) and player.is_on_wall() and player.wants_to_jump():
    	player.wall_jump()
    	return
    ```
@@ -290,7 +292,7 @@ func load_state(data: Dictionary) -> void:
 
 - Call `SaveSystem.save_game()` at the right moments: checkpoint, collected item, level change.
 - JSON turns integers into floats, so use `int(...)` when reading. For values a player could tamper with, prefer `SaveSystem.get_int("key")`, which also handles wrong types.
-- Changed the save format after release? Increase `SAVE_VERSION` and handle the conversion in `_migrate()` (`autoloads/save_system.gd`).
+- Changed the save format after release? Increase `SAVE_VERSION` and handle the conversion in `_migrate()` (`autoloads/save_system.gd`). The v1 → v2 migration, which renames the abilities key, is a working example.
 
 ### 5.7 Texts and languages
 
@@ -326,10 +328,10 @@ Good places to hook sounds: the player's `jump()` and `start_dash()`, `EventBus.
 
 ### 5.10 New settings
 
-1. Add the default value to `DEFAULTS` (`autoloads/settings.gd`).
+1. Create the key constant in `autoloads/settings.gd` (e.g. `const MY_OPTION := "my_option"`) and add the default value to `DEFAULTS`.
 2. If the option changes something in the engine, apply it in `_apply()` in the same file.
 3. Create the row on screen (`ui/settings_menu/settings_menu.tscn`) and wire it with `_bind_check` or `_bind_option` in `settings_menu.gd`.
-4. Read it anywhere with `Settings.get_value("game", "my_option")`.
+4. Read it anywhere with `Settings.get_value(Settings.GAME, Settings.MY_OPTION)`. Never write a section or key as a loose string.
 
 ### 5.11 Game feel: how much to use
 

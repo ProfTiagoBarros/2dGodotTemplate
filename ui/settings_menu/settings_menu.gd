@@ -7,7 +7,7 @@ signal closed
 
 const LOCALES: Array[String] = ["", "en", "pt_BR"]
 const LOCALE_NAMES: Array[String] = ["UI_AUTO", "English", "Português (BR)"]
-const TOUCH_MODES: Array[String] = ["auto", "always", "never"]
+const TOUCH_MODES: Array[String] = [Settings.TOUCH_AUTO, Settings.TOUCH_ALWAYS, Settings.TOUCH_NEVER]
 const TOUCH_MODE_NAMES: Array[String] = ["UI_AUTO", "UI_ALWAYS", "UI_NEVER"]
 const CONTROLS_MENU := preload("res://ui/controls_menu/controls_menu.tscn")
 
@@ -28,21 +28,21 @@ const CONTROLS_MENU := preload("res://ui/controls_menu/controls_menu.tscn")
 
 
 func _ready() -> void:
-	_bind_slider(_master_slider, "Master")
-	_bind_slider(_music_slider, "Music")
-	_bind_slider(_sfx_slider, "SFX")
+	_bind_slider(_master_slider, AudioManager.MASTER_BUS)
+	_bind_slider(_music_slider, AudioManager.MUSIC_BUS)
+	_bind_slider(_sfx_slider, AudioManager.SFX_BUS)
 
 	# Tela cheia / VSync só fazem sentido em desktop.
 	var desktop := PlatformUtils.is_desktop()
 	for control: Control in [_fullscreen_label, _fullscreen_check, _vsync_label, _vsync_check]:
 		control.visible = desktop
-	_bind_check(_fullscreen_check, "video", "fullscreen")
-	_bind_check(_vsync_check, "video", "vsync")
-	_bind_check(_shake_check, "game", "screen_shake")
-	_bind_check(_hitstop_check, "game", "hitstop")
+	_bind_check(_fullscreen_check, Settings.VIDEO, Settings.FULLSCREEN)
+	_bind_check(_vsync_check, Settings.VIDEO, Settings.VSYNC)
+	_bind_check(_shake_check, Settings.GAME, Settings.SCREEN_SHAKE)
+	_bind_check(_hitstop_check, Settings.GAME, Settings.HITSTOP)
 
-	_bind_option(_language_option, "locale", LOCALES, LOCALE_NAMES)
-	_bind_option(_touch_option, "touch_controls", TOUCH_MODES, TOUCH_MODE_NAMES)
+	_bind_option(_language_option, Settings.LOCALE, LOCALES, LOCALE_NAMES)
+	_bind_option(_touch_option, Settings.TOUCH_CONTROLS, TOUCH_MODES, TOUCH_MODE_NAMES)
 
 	_controls_button.pressed.connect(_open_controls)
 	_back_button.pressed.connect(close)
@@ -72,9 +72,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-func _bind_slider(slider: HSlider, bus: String) -> void:
-	slider.value = float(Settings.get_value("audio", bus))
-	slider.value_changed.connect(func(value: float) -> void: Settings.set_value("audio", bus, value))
+func _bind_slider(slider: HSlider, bus: StringName) -> void:
+	slider.value = float(Settings.get_value(Settings.AUDIO, bus))
+	slider.value_changed.connect(func(value: float) -> void: Settings.set_value(Settings.AUDIO, bus, value))
 
 
 func _bind_check(check: CheckButton, section: String, key: String) -> void:
@@ -85,5 +85,5 @@ func _bind_check(check: CheckButton, section: String, key: String) -> void:
 func _bind_option(option: OptionButton, key: String, values: Array[String], labels: Array[String]) -> void:
 	for label: String in labels:
 		option.add_item(label)
-	option.selected = maxi(values.find(str(Settings.get_value("game", key))), 0)
-	option.item_selected.connect(func(index: int) -> void: Settings.set_value("game", key, values[index]))
+	option.selected = maxi(values.find(str(Settings.get_value(Settings.GAME, key))), 0)
+	option.item_selected.connect(func(index: int) -> void: Settings.set_value(Settings.GAME, key, values[index]))

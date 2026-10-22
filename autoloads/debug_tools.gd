@@ -252,7 +252,7 @@ func _cmd_log(args: PackedStringArray) -> String:
 
 func _cmd_lang(args: PackedStringArray) -> String:
 	if not args.is_empty():
-		Settings.set_value("game", "locale", "" if args[0] == "auto" else args[0], true)
+		Settings.set_value(Settings.GAME, Settings.LOCALE, "" if args[0] == "auto" else args[0], true)
 	return "Idioma: %s" % TranslationServer.get_locale()
 
 

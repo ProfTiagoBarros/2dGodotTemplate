@@ -29,6 +29,7 @@ size = Vector2(18, 16)
 collision_layer = 2
 script = ExtResource("1_player")
 stats = ExtResource("2_stats")
+abilities = Array[StringName]([&"attack", &"dash"])
 
 [node name="Visual" type="Node2D" parent="."]
 

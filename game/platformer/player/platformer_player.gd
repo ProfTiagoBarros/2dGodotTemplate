@@ -2,23 +2,18 @@ class_name PlatformerPlayer
 extends PlayerCharacter
 ## Player de plataforma (side-scrolling / metroidvania). A decisão "o que fazer
 ## agora" vive nos estados (states/); este script expõe só o que é ESPECÍFICO do
-## gênero: movimento, pulo, ataque direcional/pogo, dash e HABILIDADES.
-## Vida, dano, golpe e morte vêm de Character/PlayerCharacter.
+## gênero: movimento, pulo, ataque direcional/pogo e dash. Vida, dano, golpe,
+## morte e o sistema de habilidades vêm de Character/PlayerCharacter.
 ##
-## Habilidades (progressão metroidvania): `abilities` lista o que o player já
-## pode fazer. Destrave com `unlock_ability()` (ex.: AbilityPickup); o progresso
-## é salvo no SaveSystem (grupo Groups.PERSIST).
+## Habilidades usadas aqui: ABILITY_* (as iniciais ficam em `abilities` na cena).
 
 const ABILITY_ATTACK := &"attack"
 const ABILITY_DASH := &"dash"
 const ABILITY_DOUBLE_JUMP := &"double_jump"
-const SAVE_KEY := "platformer_abilities"
 
 @export var stats: PlatformerStats
 ## Empurrão ao levar dano: x = para longe da fonte, y = para cima (negativo).
 @export var knockback := Vector2(160.0, -180.0)
-## Habilidades iniciais (usadas quando o save ainda não tem progresso).
-@export var abilities: Array[StringName] = [ABILITY_ATTACK, ABILITY_DASH]
 
 var coyote_timer := 0.0
 var jump_buffer_timer := 0.0
@@ -36,8 +31,6 @@ var _peak_fall_speed := 0.0
 
 func _ready() -> void:
 	super._ready()
-	add_to_group(Groups.PERSIST)
-	_load_abilities()
 	_refill_air_resources()
 
 
@@ -213,48 +206,14 @@ func end_dash() -> void:
 #endregion
 
 
-#region Habilidades (metroidvania)
+#region Habilidades
 
-func has_ability(ability: StringName) -> bool:
-	return ability in abilities
-
-
-## Retorna true se a habilidade era nova.
-func unlock_ability(ability: StringName) -> bool:
-	if has_ability(ability):
-		return false
-	abilities.append(ability)
+## Destravar no chão recarrega na hora; travar no ar tira o pulo extra.
+func _on_abilities_changed() -> void:
 	if is_on_floor():
 		_refill_air_resources()
-	EventBus.ability_unlocked.emit(ability)
-	return true
-
-
-func lock_ability(ability: StringName) -> void:
-	abilities.erase(ability)
-	_refill_air_resources()
-
-
-## Chamado pelo SaveSystem (grupo Groups.PERSIST).
-func save_state(data: Dictionary) -> void:
-	var names: Array[String] = []
-	for ability: StringName in abilities:
-		names.append(String(ability))
-	data[SAVE_KEY] = names
-
-
-## Chamado pelo SaveSystem (grupo Groups.PERSIST).
-func load_state(_data: Dictionary) -> void:
-	_load_abilities()
-
-
-func _load_abilities() -> void:
-	var saved: Variant = SaveSystem.data.get(SAVE_KEY)
-	if not saved is Array:
-		return
-	abilities.clear()
-	for ability: Variant in saved:
-		abilities.append(StringName(str(ability)))
+	elif not has_ability(ABILITY_DOUBLE_JUMP):
+		air_jumps_left = 0
 
 
 func _refill_air_resources() -> void:
