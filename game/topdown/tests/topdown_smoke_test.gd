@@ -7,14 +7,14 @@ const ENEMY_SCENE := preload("res://game/topdown/enemies/topdown_enemy.tscn")
 
 func run(t: SmokeTest) -> void:
 	var game := await t.spawn_game(LEVEL)
-	var player := game.get_tree().get_first_node_in_group(&"player") as TopDownPlayer
+	var player := game.get_tree().get_first_node_in_group(Groups.PLAYER) as TopDownPlayer
 	t.check(player != null, "TopDownPlayer instanciado")
 	if player == null:
 		await t.despawn(game)
 		return
 
 	# Inimigos da fase: confere e tira de cena (os testes de inimigo criam os seus).
-	var level_enemies := game.get_tree().get_nodes_in_group(&"enemy")
+	var level_enemies := game.get_tree().get_nodes_in_group(Groups.ENEMY)
 	t.check(level_enemies.size() >= 2, "Fase tem inimigos")
 	for enemy: Node in level_enemies:
 		enemy.queue_free()
@@ -22,7 +22,7 @@ func run(t: SmokeTest) -> void:
 
 	t.check(player.state_machine.current_state.name == &"Idle", "Estado inicial é Idle")
 	var hud := game.find_child("HUD", true, false) as GameHUD
-	var expected_hints: Array[StringName] = [&"attack", &"dash", &"pause"]
+	var expected_hints: Array[StringName] = [Actions.ATTACK, Actions.DASH, Actions.PAUSE]
 	t.check(hud.get_hint_actions() == expected_hints,
 			"HUD mostra as dicas da fase (sem pular)")
 	t.check(not (game.find_child("TertiaryButton", true, false) as TouchButton).visible,
@@ -32,13 +32,13 @@ func run(t: SmokeTest) -> void:
 	t.check(player.global_position.distance_to(spawn) < 0.5, "Sem gravidade: player parado fica parado")
 
 	# Diagonal: Input.get_vector normaliza, então a velocidade não passa de max_speed.
-	Input.action_press(&"move_right")
-	Input.action_press(&"move_down")
+	Input.action_press(Actions.MOVE_RIGHT)
+	Input.action_press(Actions.MOVE_DOWN)
 	await t.frames(40)
 	var diagonal_speed := player.velocity.length()
 	t.check(player.state_machine.current_state.name == &"Walk", "Estado Walk ao mover")
-	Input.action_release(&"move_right")
-	Input.action_release(&"move_down")
+	Input.action_release(Actions.MOVE_RIGHT)
+	Input.action_release(Actions.MOVE_DOWN)
 	t.check(diagonal_speed <= player.stats.max_speed + 1.0, "Diagonal normalizada (%.0f px/s)" % diagonal_speed)
 	t.check(player.global_position.x > spawn.x + 20.0 and player.global_position.y > spawn.y + 20.0,
 			"Player anda na diagonal")
@@ -48,7 +48,7 @@ func run(t: SmokeTest) -> void:
 	player.face(Vector2.LEFT)
 	var before_dash := player.global_position
 	t.spawned_effects.clear()
-	await t.tap(&"dash")
+	await t.tap(Actions.DASH)
 	await t.frames(2) # o sinal physics_frame vem ANTES dos nós processarem
 	t.check(player.state_machine.current_state.name == &"Dash", "Estado Dash ativo")
 	t.check(player.health.is_invulnerable(), "Dash concede invencibilidade")
@@ -69,7 +69,7 @@ func run(t: SmokeTest) -> void:
 	var dummy_before := dummy_health.current
 	await t.frames(2)
 	t.spawned_effects.clear()
-	await t.tap(&"attack")
+	await t.tap(Actions.ATTACK)
 	await t.frames(8)
 	t.check(dummy_health.current < dummy_before, "Ataque causa dano no dummy")
 	t.check("hit_sparks" in t.spawned_effects, "Golpe que acerta solta faíscas")
@@ -78,14 +78,14 @@ func run(t: SmokeTest) -> void:
 	t.check(player.state_machine.current_state.name == &"Idle", "Volta a Idle após o ataque")
 
 	# Mira com analógico direito (twin-stick): o ataque sai na direção da mira.
-	Input.action_press(&"aim_up", 1.0)
+	Input.action_press(Actions.AIM_UP, 1.0)
 	await t.frames(3)
 	t.check(player.aim_source == TopDownPlayer.AimSource.STICK and player.aim_direction.dot(Vector2.UP) > 0.99,
 			"Analógico direito controla a mira")
-	await t.tap(&"attack")
+	await t.tap(Actions.ATTACK)
 	await t.frames(2)
 	t.check(is_equal_approx(player.attack_pivot.rotation, Vector2.UP.angle()), "Ataque sai na direção da mira")
-	Input.action_release(&"aim_up")
+	Input.action_release(Actions.AIM_UP)
 	await t.frames(20)
 
 	# Mira com mouse: mexer o mouse de verdade passa a mira para o cursor.
@@ -103,7 +103,7 @@ func run(t: SmokeTest) -> void:
 	touch_click.button_index = MOUSE_BUTTON_LEFT
 	touch_click.pressed = true
 	touch_click.device = InputEvent.DEVICE_ID_EMULATION
-	t.check(not InputMap.event_is_action(touch_click, &"attack"), "Toque na tela (clique emulado) não dispara ataque")
+	t.check(not InputMap.event_is_action(touch_click, Actions.ATTACK), "Toque na tela (clique emulado) não dispara ataque")
 
 	# Usar o gamepad devolve a mira ao movimento/analógico.
 	var pad_button := InputEventJoypadButton.new()
@@ -156,7 +156,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: TopDownPlayer) -> void:
 		player.velocity = Vector2.ZERO
 		player.face(Vector2.RIGHT)
 		await t.frames(2)
-		await t.tap(&"attack")
+		await t.tap(Actions.ATTACK)
 		await t.frames(25)
 	t.check(&"Hurt" in states, "Golpe atordoa o slime (Hurt)")
 	t.check(killed[0] == 1, "3 golpes matam o slime (EventBus.enemy_died)")

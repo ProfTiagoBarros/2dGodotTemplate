@@ -1,12 +1,13 @@
 class_name PlatformerPlayer
-extends CharacterBody2D
+extends PlayerCharacter
 ## Player de plataforma (side-scrolling / metroidvania). A decisão "o que fazer
-## agora" vive nos estados (states/); este script expõe as primitivas de
-## movimento, ataque, dash e o controle de HABILIDADES desbloqueáveis.
+## agora" vive nos estados (states/); este script expõe só o que é ESPECÍFICO do
+## gênero: movimento, pulo, ataque direcional/pogo, dash e HABILIDADES.
+## Vida, dano, golpe e morte vêm de Character/PlayerCharacter.
 ##
 ## Habilidades (progressão metroidvania): `abilities` lista o que o player já
 ## pode fazer. Destrave com `unlock_ability()` (ex.: AbilityPickup); o progresso
-## é salvo no SaveSystem (grupo "persist").
+## é salvo no SaveSystem (grupo Groups.PERSIST).
 
 const ABILITY_ATTACK := &"attack"
 const ABILITY_DASH := &"dash"
@@ -14,6 +15,7 @@ const ABILITY_DOUBLE_JUMP := &"double_jump"
 const SAVE_KEY := "platformer_abilities"
 
 @export var stats: PlatformerStats
+## Empurrão ao levar dano: x = para longe da fonte, y = para cima (negativo).
 @export var knockback := Vector2(160.0, -180.0)
 ## Habilidades iniciais (usadas quando o save ainda não tem progresso).
 @export var abilities: Array[StringName] = [ABILITY_ATTACK, ABILITY_DASH]
@@ -26,37 +28,22 @@ var air_dashes_left := 0
 ## Direção do ataque atual/último: lado, cima ou baixo (pogo).
 var attack_direction := Vector2.RIGHT
 
-var _attacking := false
 var _attack_cooldown_left := 0.0
 var _dash_cooldown_left := 0.0
 var _was_on_floor := true
 var _peak_fall_speed := 0.0
 
-@onready var visual: Node2D = $Visual
-@onready var squash: SquashStretch = $Visual/Squash
-@onready var health: HealthComponent = $HealthComponent
-@onready var state_machine: StateMachine = $StateMachine
-@onready var attack_pivot: Node2D = $AttackPivot
-@onready var attack_hitbox: HitboxComponent = $AttackPivot/AttackHitbox
-@onready var _attack_shape: CollisionShape2D = $AttackPivot/AttackHitbox/CollisionShape2D
-
 
 func _ready() -> void:
-	add_to_group(SaveSystem.PERSIST_GROUP)
+	super._ready()
+	add_to_group(Groups.PERSIST)
 	_load_abilities()
-	health.health_changed.connect(_on_health_changed)
-	health.damaged.connect(_on_damaged)
-	health.died.connect(_on_died)
-	attack_hitbox.hit_landed.connect(_on_attack_landed)
-	_set_hitbox_active(false)
 	_refill_air_resources()
-	# Adiado para que a HUD (instanciada depois) já esteja conectada.
-	_on_health_changed.call_deferred(health.current, health.max_health)
 
 
 func _physics_process(delta: float) -> void:
 	# Roda antes da StateMachine (o pai é processado antes dos filhos).
-	if Input.is_action_just_pressed(&"jump"):
+	if Input.is_action_just_pressed(Actions.JUMP):
 		jump_buffer_timer = stats.jump_buffer_time
 	else:
 		jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
@@ -74,14 +61,34 @@ func _physics_process(delta: float) -> void:
 	_dash_cooldown_left = maxf(_dash_cooldown_left - delta, 0.0)
 
 
+#region Ganchos de Character
+
+func get_facing_vector() -> Vector2:
+	return Vector2(facing, 0.0)
+
+
+func apply_knockback(direction: Vector2) -> void:
+	var side := signf(direction.x) if not is_zero_approx(direction.x) else -facing
+	velocity = Vector2(knockback.x * side, knockback.y)
+
+
+## Pogo: acertar algo com o ataque para baixo quica e recarrega pulo/dash no ar.
+func _on_hit_landed(_hurtbox: HurtboxComponent) -> void:
+	if attack_direction == Vector2.DOWN:
+		velocity.y = -stats.pogo_velocity
+		_refill_air_resources()
+
+#endregion
+
+
 #region Movimento
 
 func get_input_axis() -> float:
-	return Input.get_axis(&"move_left", &"move_right")
+	return Input.get_axis(Actions.MOVE_LEFT, Actions.MOVE_RIGHT)
 
 
 func apply_gravity(delta: float) -> void:
-	var rising_with_jump := velocity.y < 0.0 and Input.is_action_pressed(&"jump")
+	var rising_with_jump := velocity.y < 0.0 and Input.is_action_pressed(Actions.JUMP)
 	var gravity := stats.jump_gravity if rising_with_jump else stats.fall_gravity
 	velocity.y = minf(velocity.y + gravity * delta, stats.max_fall_speed)
 
@@ -94,7 +101,7 @@ func apply_horizontal(delta: float, on_ground: bool) -> void:
 	else:
 		rate = stats.acceleration if on_ground else stats.air_acceleration
 		# Durante o golpe o player não vira (a hitbox não "troca de lado").
-		if not _attacking:
+		if not is_attacking():
 			face(signf(axis))
 	velocity.x = move_toward(velocity.x, axis * stats.max_speed, rate * delta)
 
@@ -104,6 +111,15 @@ func face(direction: float) -> void:
 		return
 	facing = signf(direction)
 	visual.scale.x = facing
+
+
+## Aterrissagem: squash proporcional à velocidade da queda (0..max_fall_speed).
+func _on_landed(fall_speed: float) -> void:
+	var impact := clampf(fall_speed / stats.max_fall_speed, 0.0, 1.0)
+	if impact < 0.25:
+		return
+	squash.stretch_horizontal(1.0 + 0.4 * impact)
+	GameFeel.spawn_effect(GameFeel.DUST, global_position)
 
 #endregion
 
@@ -141,14 +157,14 @@ func jump() -> void:
 #region Ataque
 
 func can_attack() -> bool:
-	return has_ability(ABILITY_ATTACK) and not _attacking and _attack_cooldown_left <= 0.0
+	return has_ability(ABILITY_ATTACK) and not is_attacking() and _attack_cooldown_left <= 0.0
 
 
 ## Cima (segurando ↑), baixo (no ar segurando ↓ — pogo) ou para o lado.
 func get_attack_direction() -> Vector2:
-	if Input.is_action_pressed(&"move_up"):
+	if Input.is_action_pressed(Actions.MOVE_UP):
 		return Vector2.UP
-	if not is_on_floor() and Input.is_action_pressed(&"move_down"):
+	if not is_on_floor() and Input.is_action_pressed(Actions.MOVE_DOWN):
 		return Vector2.DOWN
 	return Vector2(facing, 0.0)
 
@@ -156,23 +172,13 @@ func get_attack_direction() -> Vector2:
 func start_attack() -> void:
 	attack_direction = get_attack_direction()
 	attack_pivot.rotation = attack_direction.angle()
-	_set_hitbox_active(true)
+	set_attack_active(true)
 
 
 func end_attack() -> void:
-	if _attacking:
+	if is_attacking():
 		_attack_cooldown_left = stats.attack_cooldown
-	_set_hitbox_active(false)
-
-
-func is_attacking() -> bool:
-	return _attacking
-
-
-func _set_hitbox_active(active: bool) -> void:
-	_attacking = active
-	_attack_shape.set_deferred(&"disabled", not active)
-	attack_hitbox.visible = active
+	set_attack_active(false)
 
 #endregion
 
@@ -229,7 +235,7 @@ func lock_ability(ability: StringName) -> void:
 	_refill_air_resources()
 
 
-## Chamado pelo SaveSystem (grupo "persist").
+## Chamado pelo SaveSystem (grupo Groups.PERSIST).
 func save_state(data: Dictionary) -> void:
 	var names: Array[String] = []
 	for ability: StringName in abilities:
@@ -237,7 +243,7 @@ func save_state(data: Dictionary) -> void:
 	data[SAVE_KEY] = names
 
 
-## Chamado pelo SaveSystem (grupo "persist").
+## Chamado pelo SaveSystem (grupo Groups.PERSIST).
 func load_state(_data: Dictionary) -> void:
 	_load_abilities()
 
@@ -256,47 +262,3 @@ func _refill_air_resources() -> void:
 	air_dashes_left = stats.air_dashes
 
 #endregion
-
-
-func _on_health_changed(current: int, max_health: int) -> void:
-	EventBus.player_health_changed.emit(current, max_health)
-
-
-func _on_damaged(_amount: int, source: Node) -> void:
-	var direction := -facing
-	if source is Node2D:
-		var away := signf(global_position.x - (source as Node2D).global_position.x)
-		if away != 0.0:
-			direction = away
-	velocity = Vector2(knockback.x * direction, knockback.y)
-	# Flash: HitFlashComponent. Aqui: impacto "médio-grande".
-	EventBus.camera_shake_requested.emit(0.5)
-	GameFeel.hitstop(0.08)
-
-
-## Aterrissagem: squash proporcional à velocidade da queda (0..max_fall_speed).
-func _on_landed(fall_speed: float) -> void:
-	var impact := clampf(fall_speed / stats.max_fall_speed, 0.0, 1.0)
-	if impact < 0.25:
-		return
-	squash.stretch_horizontal(1.0 + 0.4 * impact)
-	GameFeel.spawn_effect(GameFeel.DUST, global_position)
-
-
-func _on_attack_landed(_hurtbox: HurtboxComponent) -> void:
-	EventBus.camera_shake_requested.emit(0.15)
-	GameFeel.hitstop(0.05)
-	GameFeel.spawn_effect(GameFeel.HIT_SPARKS, _attack_shape.global_position)
-	# Pogo: acertar algo com o ataque para baixo quica e recarrega pulo/dash no ar.
-	if attack_direction == Vector2.DOWN:
-		velocity.y = -stats.pogo_velocity
-		_refill_air_resources()
-
-
-func _on_died() -> void:
-	set_physics_process(false)
-	end_attack()
-	state_machine.process_mode = Node.PROCESS_MODE_DISABLED
-	var tween := create_tween()
-	tween.tween_property(visual, "modulate:a", 0.0, 0.4)
-	EventBus.player_died.emit()

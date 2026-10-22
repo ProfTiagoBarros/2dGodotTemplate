@@ -26,7 +26,7 @@ func _process(delta: float) -> void:
 
 
 func _free_if_already_owned() -> void:
-	var player := get_tree().get_first_node_in_group(&"player")
+	var player := get_tree().get_first_node_in_group(Groups.PLAYER)
 	if player != null and player.has_method(&"has_ability") and player.call(&"has_ability", ability):
 		queue_free()
 

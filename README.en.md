@@ -116,7 +116,7 @@ core/          Reusable, game- and genre-agnostic code
   state_machine/ StateMachine + State (node-based FSM)
   camera/        GameCamera (trauma-based screen shake)
   utils/         MathUtils, PlatformUtils, SafeConfig
-  constants/     ScenePaths, PhysicsLayers
+  constants/     ScenePaths, PhysicsLayers, Actions (InputMap actions), Groups
   debug/         ConsoleLogger (captures engine output for the console)
   feel/          HitFlashComponent, SquashStretch, flash shader, particle effects
 game/          Game content, organized BY FEATURE
@@ -125,6 +125,7 @@ game/          Game content, organized BY FEATURE
   game_debug_commands.gd  Console commands and gameplay watches
   hazards/       DamageZone (spikes)
   props/         TrainingDummy, AbilityPickup
+  characters/    Character and PlayerCharacter: abstract bases of every combat character
   enemies/       Enemy (generic base), EnemyStats and shared AI states
   world/         SolidBlock (greybox)
   platformer/    Side-scrolling MODULE: player, states, stats, enemy, level, tests
@@ -215,6 +216,8 @@ Gameplay commands live in `game/game_debug_commands.gd`. `core/` only has the ge
 - **Call down, signal up**: parents call methods on children and children emit signals. `EventBus` is only used when systems don't know each other (e.g. the HUD never references the Player).
 - **Pause by reason**: nobody writes `get_tree().paused` directly. Each system requests and releases pause with a reason (`PauseController.request(&"menu")` / `release(&"menu")`), and the game only resumes when no reason is left. That way, closing the debug console doesn't unpause the game while the pause menu is open.
 - **Composition with components**: health and damage are reusable nodes, the same in both genres. Hitboxes and hurtboxes have a **`team`** (`player`, `enemy` or empty = neutral): a hurtbox ignores hits from its own team and its own entity (`owner`). Enemies don't hurt each other, the player doesn't hurt itself, and (neutral) spikes hurt everyone.
+- **Shallow character hierarchy**: `Character` (abstract) holds the combat lifecycle shared by everyone (taking damage → knockback, shake and hitstop; a hit lands → sparks; dying → disable physics, AI and hitbox). `PlayerCharacter` adds what "being the player" means (HUD via `EventBus`, group, death). Each genre's players and enemies only implement the `@abstract` hooks (`apply_knockback`, `get_facing_vector`, `_play_death`) and movement; forgetting one is a **compile error**. Capabilities still come from components: inheritance only for the lifecycle, composition for everything else.
+- **Names as constants**: actions and groups are `Actions.JUMP`, `Groups.PLAYER` etc. (`core/constants/`), never loose strings. A typo becomes a compile error, and the smoke test fails if the InputMap has an action missing from `Actions.ALL`.
 - **Node-based state machine**: each state is a child node with `enter/exit/update/physics_update/handle_input`. The player exposes movement primitives and the states decide the transitions.
 - **Data-driven Resources**: `PlatformerStats` and `TopDownStats` are `Resource`s. Create different `.tres` files per character or power-up.
 - **Abstract input**: gameplay only reads InputMap **actions**. Keyboard, gamepad and touch produce the same actions. Each level defines what touch buttons A/B/C do (`Level.touch_actions`) and which button prompts the HUD shows (`Level.hud_hint_actions`).
@@ -242,7 +245,7 @@ The player has an `abilities` list. By default it has `attack` and `dash`; `doub
 
 - `has_ability()` gates what can be used; states check it before acting.
 - `unlock_ability()` / `lock_ability()` change the list. Unlocking emits `EventBus.ability_unlocked`, and the HUD shows "<ability> unlocked!".
-- Progress is **saved through SaveSystem**: the player is in the `persist` group, and pickups autosave when collected.
+- Progress is **saved through SaveSystem**: the player is in the `Groups.PERSIST` group, and pickups autosave when collected.
 - **`AbilityPickup`** (`game/props/`) is the collectible that unlocks an ability. It removes itself if the player already has it. The example level has a double jump pickup and a high ledge designed to be reachable only with it.
 - **New ability:** pick a name (e.g. `wall_jump`), check `player.has_ability(&"wall_jump")` in the state that uses it, place an `AbilityPickup` with `ability = &"wall_jump"` and add the `ABILITY_WALL_JUMP` key to `translations.csv`.
 - To test, use the debug command `ability [name] [on|off]`.
@@ -286,7 +289,7 @@ Each example level has 2 enemies. In the F3 overlay, the "Enemies" watch shows h
 - **Genre-aware list:** the screen only shows actions that exist in the project, so after the setup it's already right for the genre.
 - **Per-device names:** keys follow the player's keyboard layout (ABNT2, AZERTY…), and gamepad buttons follow the detected family (Xbox: A/B/X/Y, PlayStation: Cross/Circle…, Nintendo: B/A/Y/X).
 - **Mouse and touch:** mouse bindings only apply to the **real mouse** (`InputEvent.DEVICE_ID_MOUSE`). The click phones emulate from touch is ignored; otherwise every tap on the screen would trigger the action.
-- **On-screen prompts:** `InputBindings.get_prompt(&"attack")` returns the binding for the current device. The `ActionPromptLabel` component (used in the HUD) shows "Attack [J]" or "Attack [X]" and updates itself.
+- **On-screen prompts:** `InputBindings.get_prompt(Actions.ATTACK)` returns the binding for the current device. The `ActionPromptLabel` component (used in the HUD) shows "Attack [J]" or "Attack [X]" and updates itself.
 - **New remappable action:** create the action in the InputMap and add it to `InputBindings.REMAPPABLE` with the translation key of its name.
 
 ### Physics layers
@@ -352,7 +355,7 @@ Files in `user://` (settings, saves) can be edited by the player or shared betwe
 
 - **New level**: duplicate your module's level (the root uses `level.gd`) and point `ScenePaths.FIRST_LEVEL` to it, or load it through `game.level_path`.
 - **New player state**: create a script that `extends PlatformerState` (or `TopDownState`), add a child node under `Player/StateMachine` and call `transition_to(&"NodeName")`.
-- **New enemy type**: duplicate `platformer_enemy.tscn` (or `topdown_enemy.tscn`), swap the visuals and create an `EnemyStats` (.tres) with its numbers. For different movement, extend `Enemy` and override `patrol_direction`/`direction_to_target`/`move_toward_direction`.
+- **New enemy type**: duplicate `platformer_enemy.tscn` (or `topdown_enemy.tscn`), swap the visuals and create an `EnemyStats` (.tres) with its numbers. For different movement, extend `Enemy` and implement the abstract methods `patrol_direction`/`direction_to_target`/`move_toward_direction`.
 - **New setting**: add the default to `Settings.DEFAULTS`, handle it in `Settings._apply` and create the control in `settings_menu`.
 - **New text**: add a line to `translations.csv` and use the key as the Control's `text`.
 - **New genre module** (e.g. twin-stick, puzzle): create `game/<genre>/` with a level, player and `tests/<genre>_smoke_test.gd`, and register it in `tools/genre_setup.gd` (`GENRES`) and `tests/smoke_test.gd` (`GENRE_SUITES`).

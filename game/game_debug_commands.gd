@@ -32,7 +32,7 @@ func _tree() -> SceneTree:
 
 
 func _player() -> CharacterBody2D:
-	return _tree().get_first_node_in_group(&"player") as CharacterBody2D
+	return _tree().get_first_node_in_group(Groups.PLAYER) as CharacterBody2D
 
 
 func _health() -> HealthComponent:
@@ -174,7 +174,7 @@ func _watch_health() -> String:
 
 
 func _watch_enemies() -> String:
-	var enemies := _tree().get_nodes_in_group(&"enemy")
+	var enemies := _tree().get_nodes_in_group(Groups.ENEMY)
 	if enemies.is_empty():
 		return ""
 	var chasing := 0

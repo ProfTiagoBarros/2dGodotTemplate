@@ -1,9 +1,11 @@
+@abstract
 class_name Enemy
-extends CharacterBody2D
+extends Character
 ## Base de inimigos de QUALQUER gênero. Os estados genéricos em
 ## game/enemies/states/ (Patrol → Chase → Windup → Attack → Recover, e Hurt ao
-## levar dano) usam só a API pública abaixo. Cada gênero estende esta classe e
-## implementa o MOVIMENTO (métodos marcados "Sobrescreva").
+## levar dano) usam só a API pública abaixo. Dano, golpe e morte vêm de
+## Character; cada gênero estende esta classe e implementa o MOVIMENTO
+## (métodos @abstract — o compilador recusa um inimigo que esqueça algum).
 ##
 ## Cena esperada (veja platformer_enemy.tscn / topdown_enemy.tscn):
 ##   Visual/Squash, HealthComponent, Hurtbox, ContactHitbox,
@@ -20,28 +22,27 @@ signal target_changed(target: Node2D)
 var target: Node2D
 var facing := Vector2.RIGHT
 
-var _attacking := false
 var _windup_tween: Tween
 var _perception_cooldown := 0.0
 
-@onready var visual: Node2D = $Visual
-@onready var squash: SquashStretch = $Visual/Squash
-@onready var health: HealthComponent = $HealthComponent
-@onready var state_machine: StateMachine = $StateMachine
-@onready var attack_pivot: Node2D = $AttackPivot
-@onready var attack_hitbox: HitboxComponent = $AttackPivot/AttackHitbox
-@onready var _attack_shape: CollisionShape2D = $AttackPivot/AttackHitbox/CollisionShape2D
 @onready var _contact_hitbox: HitboxComponent = $ContactHitbox
 @onready var _hurtbox: HurtboxComponent = $Hurtbox
 
 
+func _init() -> void:
+	# O tremor/hitstop do combate já é disparado pelo PLAYER (ao acertar e ao
+	# levar dano); repetir aqui dobraria o efeito. Uma cena pode religar.
+	hurt_shake = 0.0
+	hurt_hitstop = 0.0
+	hit_shake = 0.0
+	hit_hitstop = 0.0
+
+
 func _ready() -> void:
-	add_to_group(&"enemy")
+	super._ready()
+	add_to_group(Groups.ENEMY)
 	# Começa em fase aleatória: espalha os raycasts dos inimigos entre frames.
 	_perception_cooldown = randf() * perception_interval
-	health.damaged.connect(_on_damaged)
-	health.died.connect(_on_died)
-	set_attack_active(false)
 
 
 func _physics_process(delta: float) -> void:
@@ -54,10 +55,10 @@ func _physics_process(delta: float) -> void:
 
 #region Percepção
 
-## Alvo = player (grupo "player") vivo, dentro do raio e com linha de visão.
+## Alvo = player (grupo Groups.PLAYER) vivo, dentro do raio e com linha de visão.
 ## Já perseguindo, usa o raio maior (lose_target_radius): histerese.
 func update_target() -> void:
-	var player := get_tree().get_first_node_in_group(&"player") as Node2D
+	var player := get_tree().get_first_node_in_group(Groups.PLAYER) as Node2D
 	var new_target: Node2D = null
 	if player != null and _is_alive(player):
 		var radius := stats.lose_target_radius if target != null else stats.detection_radius
@@ -89,22 +90,19 @@ func _is_alive(node: Node) -> bool:
 #endregion
 
 
-#region Movimento (sobrescreva por gênero)
+#region Movimento (implementado por gênero)
 
-## Sobrescreva: direção (unitária) até o alvo no plano de movimento do gênero.
-func direction_to_target() -> Vector2:
-	return Vector2.ZERO
-
-
-## Sobrescreva: direção de patrulha (ida e volta, vaguear...).
-func patrol_direction() -> Vector2:
-	return Vector2.ZERO
+## Direção (unitária) até o alvo no plano de movimento do gênero.
+@abstract func direction_to_target() -> Vector2
 
 
-## Sobrescreva: acelera até direction × speed e chama move_and_slide().
+## Direção de patrulha (ida e volta, vaguear...).
+@abstract func patrol_direction() -> Vector2
+
+
+## Acelera até direction × speed e chama move_and_slide().
 ## direction = ZERO desacelera (usado em Windup/Recover/Hurt).
-func move_toward_direction(_direction: Vector2, _speed: float, _delta: float) -> void:
-	move_and_slide()
+@abstract func move_toward_direction(direction: Vector2, speed: float, delta: float) -> void
 
 
 ## Sobrescreva se o bote precisar de gravidade etc.
@@ -115,6 +113,10 @@ func lunge_step(_delta: float) -> void:
 ## Sobrescreva para ajustar o knockback (ex.: pulinho no platformer).
 func apply_knockback(direction: Vector2) -> void:
 	velocity = direction * stats.knockback_speed
+
+
+func get_facing_vector() -> Vector2:
+	return facing
 
 
 func face(direction: Vector2) -> void:
@@ -158,35 +160,21 @@ func end_lunge() -> void:
 	set_attack_active(false)
 
 
-func is_attacking() -> bool:
-	return _attacking
-
-
+## O golpe sai na direção para onde o inimigo olha.
 func set_attack_active(active: bool) -> void:
-	_attacking = active
 	attack_pivot.rotation = facing.angle()
-	_attack_shape.set_deferred(&"disabled", not active)
-	attack_hitbox.visible = active
+	super.set_attack_active(active)
 
 #endregion
 
 
-func _on_damaged(_amount: int, source: Node) -> void:
-	var away := -facing
-	if source is Node2D:
-		var offset := global_position - (source as Node2D).global_position
-		if not offset.is_zero_approx():
-			away = offset.normalized()
-	apply_knockback(away)
+func _on_hurt(_amount: int, _source: Node) -> void:
 	if not health.is_dead():
 		state_machine.transition_to(&"Hurt")
 
 
-func _on_died() -> void:
+func _play_death() -> void:
 	EventBus.enemy_died.emit(self)
-	set_physics_process(false)
-	state_machine.process_mode = Node.PROCESS_MODE_DISABLED
-	set_attack_active(false)
 	collision_layer = 0
 	_contact_hitbox.set_deferred(&"monitorable", false)
 	_hurtbox.set_deferred(&"monitoring", false)

@@ -243,7 +243,7 @@ No top-down, coloque personagens, inimigos e objetos altos dentro do nó `Entiti
 3. Duplique o `.tres` de stats, ajuste os números e aponte a propriedade `stats` da cena nova para ele.
 4. Ajuste o `damage` de `ContactHitbox` e `AttackHitbox`, e o `max_health` do `HealthComponent`.
 
-**Comportamento novo** (ex.: um inimigo voador no platformer): crie um script que `extends Enemy` e sobrescreva só o movimento: `patrol_direction()`, `direction_to_target()` e `move_toward_direction()`. A IA (estados) continua funcionando sozinha. Veja `platformer_enemy.gd` como modelo.
+**Comportamento novo** (ex.: um inimigo voador no platformer): crie um script que `extends Enemy` e implemente só o movimento: `patrol_direction()`, `direction_to_target()` e `move_toward_direction()`. São métodos `@abstract`: se faltar algum, o Godot avisa ao salvar o script. Dano, knockback, efeitos e morte já vêm prontos de `Character`, e a IA (estados) continua funcionando sozinha. Veja `platformer_enemy.gd` como modelo.
 
 > Para equilibrar o combate, `windup_time` é o tempo que o jogador tem para reagir e `recover_time` é a janela de contra-ataque. São os dois números que mais mudam a "justiça" da luta.
 
@@ -276,7 +276,7 @@ O `SaveSystem` guarda um dicionário (`SaveSystem.data`) em JSON. Para um nó sa
 
 ```gdscript
 func _ready() -> void:
-	add_to_group(SaveSystem.PERSIST_GROUP)
+	add_to_group(Groups.PERSIST)
 	coins = int(SaveSystem.data.get("coins", 0)) # lê o que já foi carregado
 
 
@@ -307,7 +307,7 @@ func load_state(data: Dictionary) -> void:
 ### 5.8 Novos controles
 
 1. Crie a ação em *Project Settings → Input Map*, com tecla e botão de gamepad. **Botões do mouse** precisam ter `device = 32` (`InputEvent.DEVICE_ID_MOUSE`, o mouse real); com "todos os dispositivos", cada toque na tela do celular também dispara a ação. O jeito mais simples é copiar no `project.godot` um evento de mouse já existente (veja `attack`) e trocar o `button_index`.
-2. No código, use sempre a **ação**, nunca a tecla: `Input.is_action_just_pressed(&"interact")`.
+2. Declare a ação em `core/constants/actions.gd` (constante + lista `ALL`; o smoke test acusa se esquecer) e, no código, use sempre a **constante da ação**, nunca a tecla nem texto solto: `Input.is_action_just_pressed(Actions.INTERACT)`.
 3. Para o jogador poder remapear, adicione a ação em `REMAPPABLE` em `autoloads/input_bindings.gd`, com a chave de tradução do nome.
 4. Para mostrar a dica na HUD, inclua a ação em `hud_hint_actions` da fase.
 5. Para um botão na tela de toque, inclua em `touch_actions` da fase (até 3 botões).
@@ -391,7 +391,7 @@ Helpers disponíveis em `t`:
 |---|---|
 | `t.check(cond, "descrição")` | Registra uma verificação |
 | `t.frames(n)` | Espera n frames de física |
-| `t.tap(&"acao")` / `t.hold(&"acao", n)` | Simula input |
+| `t.tap(Actions.X)` / `t.hold(Actions.X, n)` | Simula input |
 | `t.real_seconds(s)` | Espera em tempo real (use com hitstop) |
 | `t.spawned_effects` | Efeitos de partícula criados |
 

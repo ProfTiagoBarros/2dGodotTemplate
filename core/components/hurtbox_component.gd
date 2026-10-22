@@ -22,7 +22,8 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if not has_overlapping_areas():
+	# monitoring desligado (ex.: inimigo morrendo): nada a checar.
+	if not monitoring or not has_overlapping_areas():
 		set_physics_process(false)
 		return
 	if health == null or health.is_invulnerable():

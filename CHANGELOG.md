@@ -11,7 +11,16 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), 
 
 - `PauseController` (`core/utils/`): pausa coordenada por motivos (menu, console…). O jogo só despausa quando nenhum sistema pede pausa.
 
+### Alterado
+
+- Código duplicado entre players e inimigos extraído para as classes abstratas `Character` e `PlayerCharacter` (`game/characters/`). `PlatformerPlayer`, `TopDownPlayer` e `Enemy` agora só implementam movimento e os ganchos `@abstract` (`apply_knockback`, `get_facing_vector`, `_play_death`); esquecer um deles é erro de compilação. Tremor e hitstop de combate viraram propriedades exportadas (`hurt_shake`, `hit_hitstop`…).
+- Nomes de ações e grupos agora são constantes (`Actions.JUMP`, `Groups.PLAYER`…, em `core/constants/`). O smoke test falha se o InputMap tiver ação fora de `Actions.ALL`.
+- `SaveSystem.PERSIST_GROUP` foi removido; use `Groups.PERSIST`.
+- `Enemy` passou a ser `@abstract`: `patrol_direction`, `direction_to_target` e `move_toward_direction` são obrigatórios nas subclasses.
+
 ### Corrigido
+
+- `HurtboxComponent` gerava erro do engine ("Can't find overlapping areas when monitoring is off") no frame em que um inimigo morria.
 
 Encontrados na revisão de arquitetura; todos reproduzidos antes da correção e cobertos por teste:
 

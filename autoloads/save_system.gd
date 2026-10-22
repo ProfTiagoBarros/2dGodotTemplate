@@ -3,7 +3,7 @@ extends Node
 ##
 ## Fluxo:
 ##   - `data` é o estado persistente do jogo (Dictionary serializável em JSON).
-##   - Nós no grupo "persist" podem implementar `save_state(data)` e
+##   - Nós no grupo Groups.PERSIST podem implementar `save_state(data)` e
 ##     `load_state(data)` para gravar/ler seu próprio estado.
 ##   - Atenção: JSON converte int em float. Use int(...) ao ler números.
 
@@ -12,7 +12,6 @@ signal game_loaded(slot: int)
 
 const SAVE_VERSION := 1
 const SAVE_DIR := "user://saves"
-const PERSIST_GROUP := &"persist"
 
 var data: Dictionary = {}
 var current_slot := 0
@@ -33,7 +32,7 @@ func has_save(slot: int = 0) -> bool:
 
 func save_game(slot: int = current_slot) -> bool:
 	current_slot = slot
-	get_tree().call_group(PERSIST_GROUP, &"save_state", data)
+	get_tree().call_group(Groups.PERSIST, &"save_state", data)
 
 	var payload := {
 		"version": SAVE_VERSION,
@@ -80,7 +79,7 @@ func load_game(slot: int = 0) -> bool:
 		return false
 	data = loaded
 	current_slot = slot
-	get_tree().call_group(PERSIST_GROUP, &"load_state", data)
+	get_tree().call_group(Groups.PERSIST, &"load_state", data)
 	Log.debug("SaveSystem: slot %d carregado" % slot)
 	game_loaded.emit(slot)
 	return true

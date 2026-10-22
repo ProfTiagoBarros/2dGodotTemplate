@@ -1,8 +1,9 @@
 class_name TopDownPlayer
-extends CharacterBody2D
+extends PlayerCharacter
 ## Player top-down (8 direções, analógico) com mira twin-stick. Os estados
-## (states/) decidem as transições; este script expõe primitivas de movimento,
-## mira, dash e ataque.
+## (states/) decidem as transições; este script expõe só o que é ESPECÍFICO do
+## gênero: movimento, mira, dash e ataque. Vida, dano, golpe e morte vêm de
+## Character/PlayerCharacter.
 ## A origem fica nos PÉS e a colisão cobre só a base: é isso que dá a
 ## sensação de profundidade e faz o Y-sort funcionar.
 ##
@@ -19,26 +20,13 @@ var aim_direction := Vector2.DOWN
 var aim_source := AimSource.MOVEMENT
 
 var _dash_cooldown_left := 0.0
-var _attacking := false
 
-@onready var visual: Node2D = $Visual
-@onready var squash: SquashStretch = $Visual/Squash
-@onready var health: HealthComponent = $HealthComponent
-@onready var state_machine: StateMachine = $StateMachine
-@onready var attack_pivot: Node2D = $AttackPivot
-@onready var attack_hitbox: HitboxComponent = $AttackPivot/AttackHitbox
-@onready var _attack_shape: CollisionShape2D = $AttackPivot/AttackHitbox/CollisionShape2D
 @onready var _aim_indicator: Node2D = $AttackPivot/AimIndicator
 
 
 func _ready() -> void:
-	health.health_changed.connect(_on_health_changed)
-	health.damaged.connect(_on_damaged)
-	health.died.connect(_on_died)
-	attack_hitbox.hit_landed.connect(_on_attack_landed)
-	set_attack_active(false)
+	super._ready()
 	face(facing)
-	_on_health_changed.call_deferred(health.current, health.max_health)
 
 
 func _physics_process(delta: float) -> void:
@@ -49,13 +37,13 @@ func _physics_process(delta: float) -> void:
 
 ## Vetor de input já normalizado e com deadzone (módulo <= 1, preserva analógico).
 func get_input_vector() -> Vector2:
-	return Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
+	return Input.get_vector(Actions.MOVE_LEFT, Actions.MOVE_RIGHT, Actions.MOVE_UP, Actions.MOVE_DOWN)
 
 
 func get_aim_stick() -> Vector2:
-	if not InputMap.has_action(&"aim_right"):
+	if not InputMap.has_action(Actions.AIM_RIGHT):
 		return Vector2.ZERO
-	return Input.get_vector(&"aim_left", &"aim_right", &"aim_up", &"aim_down")
+	return Input.get_vector(Actions.AIM_LEFT, Actions.AIM_RIGHT, Actions.AIM_UP, Actions.AIM_DOWN)
 
 
 func apply_movement(delta: float, direction: Vector2) -> void:
@@ -81,12 +69,19 @@ func start_dash_cooldown() -> void:
 	_dash_cooldown_left = stats.dash_cooldown
 
 
+func get_facing_vector() -> Vector2:
+	return facing
+
+
+func apply_knockback(direction: Vector2) -> void:
+	velocity = direction * stats.knockback_speed
+
+
+## Além de ligar a hitbox, trava o golpe na direção da mira e esconde o indicador.
 func set_attack_active(active: bool) -> void:
-	_attacking = active
 	if active:
 		attack_pivot.rotation = aim_direction.angle()
-	_attack_shape.set_deferred(&"disabled", not active)
-	attack_hitbox.visible = active
+	super.set_attack_active(active)
 	_aim_indicator.visible = not active and aim_source != AimSource.MOVEMENT
 
 
@@ -103,43 +98,13 @@ func _update_aim() -> void:
 	else:
 		aim_source = AimSource.MOVEMENT
 		_set_aim(facing)
-	_aim_indicator.visible = not _attacking and aim_source != AimSource.MOVEMENT
+	_aim_indicator.visible = not is_attacking() and aim_source != AimSource.MOVEMENT
 
 
 func _set_aim(direction: Vector2) -> void:
 	aim_direction = direction.normalized()
 	# Durante o golpe a hitbox fica travada na direção em que o ataque começou.
-	if not _attacking:
+	if not is_attacking():
 		attack_pivot.rotation = aim_direction.angle()
 	if not is_zero_approx(aim_direction.x):
 		visual.scale.x = signf(aim_direction.x)
-
-
-func _on_health_changed(current: int, max_health: int) -> void:
-	EventBus.player_health_changed.emit(current, max_health)
-
-
-func _on_damaged(_amount: int, source: Node) -> void:
-	var away := -facing
-	if source is Node2D:
-		var offset := global_position - (source as Node2D).global_position
-		if not offset.is_zero_approx():
-			away = offset.normalized()
-	velocity = away * stats.knockback_speed
-	EventBus.camera_shake_requested.emit(0.5)
-	GameFeel.hitstop(0.08)
-
-
-func _on_attack_landed(_hurtbox: HurtboxComponent) -> void:
-	EventBus.camera_shake_requested.emit(0.2)
-	GameFeel.hitstop(0.05)
-	GameFeel.spawn_effect(GameFeel.HIT_SPARKS, _attack_shape.global_position)
-
-
-func _on_died() -> void:
-	set_physics_process(false)
-	set_attack_active(false)
-	state_machine.process_mode = Node.PROCESS_MODE_DISABLED
-	var tween := create_tween()
-	tween.tween_property(visual, "modulate:a", 0.0, 0.4)
-	EventBus.player_died.emit()

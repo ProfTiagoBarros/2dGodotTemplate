@@ -9,9 +9,9 @@ extends Node2D
 
 @export_group("UI")
 ## Ações dos botões de toque A, B e C, nessa ordem (vazio = botão escondido).
-@export var touch_actions: Array[StringName] = [&"jump", &"attack", &"dash"]
+@export var touch_actions: Array[StringName] = [Actions.JUMP, Actions.ATTACK, Actions.DASH]
 ## Ações com dica "[atalho]" na HUD (ex.: tutorial mostra só o que já foi ensinado).
-@export var hud_hint_actions: Array[StringName] = [&"jump", &"attack", &"dash", &"pause"]
+@export var hud_hint_actions: Array[StringName] = [Actions.JUMP, Actions.ATTACK, Actions.DASH, Actions.PAUSE]
 
 
 func _ready() -> void:

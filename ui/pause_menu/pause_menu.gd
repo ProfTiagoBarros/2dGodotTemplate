@@ -36,7 +36,7 @@ func set_paused(paused: bool) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _settings_menu == null and event.is_action_pressed(&"pause"):
+	if _settings_menu == null and event.is_action_pressed(Actions.PAUSE):
 		set_paused(not is_open())
 		get_viewport().set_input_as_handled()
 

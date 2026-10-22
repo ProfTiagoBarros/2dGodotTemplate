@@ -4,7 +4,7 @@ extends Control
 ## Gera InputEventAction reais: funciona com is_action_just_pressed E com
 ## _unhandled_input (ex.: menu de pausa).
 
-@export var action := &"jump"
+@export var action := Actions.JUMP
 @export var label := "A"
 @export var color := Color(1, 1, 1, 0.18)
 @export var pressed_color := Color(1, 1, 1, 0.45)

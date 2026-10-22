@@ -17,10 +17,10 @@ func _ready() -> void:
 
 ## Ações disponíveis nos estados "livres" (Idle/Walk). Retorna true se transicionou.
 func try_actions() -> bool:
-	if Input.is_action_just_pressed(&"attack"):
+	if Input.is_action_just_pressed(Actions.ATTACK):
 		transition_to(ATTACK)
 		return true
-	if Input.is_action_just_pressed(&"dash") and player.can_dash():
+	if Input.is_action_just_pressed(Actions.DASH) and player.can_dash():
 		transition_to(DASH)
 		return true
 	return false

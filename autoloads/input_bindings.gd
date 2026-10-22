@@ -8,7 +8,7 @@ extends Node
 ## daquele tipo na lista da ação. É ele que a tela de Controles mostra e troca.
 ## Os demais (ex.: setas, D-pad) continuam funcionando como alternativos.
 ##
-## Dicas na tela: InputBindings.get_prompt(&"attack") -> "J" / "X" / "Square"...
+## Dicas na tela: InputBindings.get_prompt(Actions.ATTACK) -> "J" / "X" / "Square"...
 
 signal bindings_changed
 
@@ -20,15 +20,15 @@ const SETTINGS_SECTION := "input"
 ## Ações exibidas na tela de Controles (em ordem) -> chave de tradução do nome.
 ## Ações inexistentes no InputMap (ex.: removidas pelo setup de gênero) são puladas.
 const REMAPPABLE := {
-	&"move_up": "INPUT_MOVE_UP",
-	&"move_down": "INPUT_MOVE_DOWN",
-	&"move_left": "INPUT_MOVE_LEFT",
-	&"move_right": "INPUT_MOVE_RIGHT",
-	&"jump": "INPUT_JUMP",
-	&"attack": "INPUT_ATTACK",
-	&"dash": "INPUT_DASH",
-	&"interact": "INPUT_INTERACT",
-	&"pause": "INPUT_PAUSE",
+	Actions.MOVE_UP: "INPUT_MOVE_UP",
+	Actions.MOVE_DOWN: "INPUT_MOVE_DOWN",
+	Actions.MOVE_LEFT: "INPUT_MOVE_LEFT",
+	Actions.MOVE_RIGHT: "INPUT_MOVE_RIGHT",
+	Actions.JUMP: "INPUT_JUMP",
+	Actions.ATTACK: "INPUT_ATTACK",
+	Actions.DASH: "INPUT_DASH",
+	Actions.INTERACT: "INPUT_INTERACT",
+	Actions.PAUSE: "INPUT_PAUSE",
 }
 
 const MOUSE_BUTTON_KEYS := {

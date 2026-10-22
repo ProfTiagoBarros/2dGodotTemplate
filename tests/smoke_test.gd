@@ -37,6 +37,7 @@ func _ready() -> void:
 	await _test_game_feel()
 	_test_security()
 	await _test_review_regressions()
+	_test_constants()
 
 	var suites_run := 0
 	for path: String in GENRE_SUITES:
@@ -112,51 +113,51 @@ func _test_input_bindings() -> void:
 	var kb := InputBindings.Kind.KEYBOARD_MOUSE
 	var pad := InputBindings.Kind.GAMEPAD
 
-	InputBindings.rebind(&"pause", kb, key_event(KEY_F10))
-	check(InputMap.event_is_action(key_event(KEY_F10), &"pause"), "Remapear: nova tecla dispara a ação")
-	check(not InputMap.event_is_action(key_event(KEY_ESCAPE), &"pause"), "Remapear: tecla antiga deixa de disparar")
+	InputBindings.rebind(Actions.PAUSE, kb, key_event(KEY_F10))
+	check(InputMap.event_is_action(key_event(KEY_F10), Actions.PAUSE), "Remapear: nova tecla dispara a ação")
+	check(not InputMap.event_is_action(key_event(KEY_ESCAPE), Actions.PAUSE), "Remapear: tecla antiga deixa de disparar")
 	check(Settings.get_value("input", "pause") is Array, "Remapeamento persistido no settings.cfg")
 	check(InputBindings.get_event_label(key_event(KEY_F10)) == "F10", "Nome legível da tecla")
 
 	# Conflito: F10 vai para `interact`, e `pause` recebe a tecla antiga de interact (E).
-	InputBindings.rebind(&"interact", kb, key_event(KEY_F10))
-	check(InputMap.event_is_action(key_event(KEY_F10), &"interact")
-			and not InputMap.event_is_action(key_event(KEY_F10), &"pause"), "Conflito: tecla sai da outra ação")
-	check(InputMap.event_is_action(key_event(KEY_E), &"pause"), "Conflito: a outra ação recebe a tecla antiga (troca)")
+	InputBindings.rebind(Actions.INTERACT, kb, key_event(KEY_F10))
+	check(InputMap.event_is_action(key_event(KEY_F10), Actions.INTERACT)
+			and not InputMap.event_is_action(key_event(KEY_F10), Actions.PAUSE), "Conflito: tecla sai da outra ação")
+	check(InputMap.event_is_action(key_event(KEY_E), Actions.PAUSE), "Conflito: a outra ação recebe a tecla antiga (troca)")
 
 	# Mouse: só o mouse real dispara; clique emulado pelo toque é ignorado.
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
-	InputBindings.rebind(&"interact", kb, click)
-	check(InputMap.event_is_action(mouse_event(InputEvent.DEVICE_ID_MOUSE), &"interact"), "Clique do mouse real dispara a ação")
-	check(not InputMap.event_is_action(mouse_event(InputEvent.DEVICE_ID_EMULATION), &"interact"),
+	InputBindings.rebind(Actions.INTERACT, kb, click)
+	check(InputMap.event_is_action(mouse_event(InputEvent.DEVICE_ID_MOUSE), Actions.INTERACT), "Clique do mouse real dispara a ação")
+	check(not InputMap.event_is_action(mouse_event(InputEvent.DEVICE_ID_EMULATION), Actions.INTERACT),
 			"Clique emulado pelo toque não dispara a ação")
 
 	var shoulder := InputEventJoypadButton.new()
 	shoulder.button_index = JOY_BUTTON_RIGHT_SHOULDER
-	InputBindings.rebind(&"pause", pad, shoulder)
-	check(InputBindings.get_event_label(InputBindings.get_binding(&"pause", pad)) == "RB", "Nome do botão do controle")
+	InputBindings.rebind(Actions.PAUSE, pad, shoulder)
+	check(InputBindings.get_event_label(InputBindings.get_binding(Actions.PAUSE, pad)) == "RB", "Nome do botão do controle")
 
 	# "Reinício": apaga do InputMap e reaplica o que está salvo.
-	InputMap.action_erase_events(&"interact")
+	InputMap.action_erase_events(Actions.INTERACT)
 	InputBindings.reload_saved()
-	check(InputMap.event_is_action(mouse_event(InputEvent.DEVICE_ID_MOUSE), &"interact"), "Atalhos salvos voltam ao reiniciar")
+	check(InputMap.event_is_action(mouse_event(InputEvent.DEVICE_ID_MOUSE), Actions.INTERACT), "Atalhos salvos voltam ao reiniciar")
 
 	# Tela de Controles: captura a próxima tecla para a ação escolhida.
 	var menu: ControlsMenu = preload("res://ui/controls_menu/controls_menu.tscn").instantiate()
 	add_child(menu)
 	await frames(2)
-	menu.call(&"_start_listening", &"pause", kb)
+	menu.call(&"_start_listening", Actions.PAUSE, kb)
 	Input.parse_input_event(key_event(KEY_F9))
 	# Eventos de parse_input_event são entregues no frame de PROCESSO (não de física).
 	for i in 3:
 		await get_tree().process_frame
-	check(InputMap.event_is_action(key_event(KEY_F9), &"pause"), "Tela de Controles captura a tecla pressionada")
+	check(InputMap.event_is_action(key_event(KEY_F9), Actions.PAUSE), "Tela de Controles captura a tecla pressionada")
 	menu.close()
 	await frames(1)
 
 	InputBindings.reset_all()
-	check(InputMap.event_is_action(key_event(KEY_ESCAPE), &"pause")
+	check(InputMap.event_is_action(key_event(KEY_ESCAPE), Actions.PAUSE)
 			and Settings.get_value("input", "pause") == null, "Restaurar padrões")
 	InputBindings.apply_snapshot(snapshot)
 
@@ -213,13 +214,13 @@ func _test_debug_tools() -> void:
 	check(not get_tree().paused, "Fechar o console despausa")
 
 	# Comandos de gameplay (genéricos entre gêneros).
-	var health := get_tree().get_first_node_in_group(&"player").get(&"health") as HealthComponent
+	var health := get_tree().get_first_node_in_group(Groups.PLAYER).get(&"health") as HealthComponent
 	DebugTools.execute("god")
 	check(health.god_mode and not health.take_damage(1), "god: player não leva dano")
 	DebugTools.execute("god")
 	check(not health.god_mode, "god de novo desliga")
 	DebugTools.execute("tp 123 45")
-	var player := get_tree().get_first_node_in_group(&"player") as Node2D
+	var player := get_tree().get_first_node_in_group(Groups.PLAYER) as Node2D
 	check(player.global_position.is_equal_approx(Vector2(123, 45)), "tp teleporta o player")
 	check(ScenePaths.FIRST_LEVEL.get_file().get_basename() in DebugTools.execute("level"), "level lista as fases")
 	check("não encontrada" in DebugTools.execute("level fase_inexistente"), "level avisa fase inexistente")
@@ -316,7 +317,7 @@ func _test_review_regressions() -> void:
 
 	# TouchButton removido com o dedo na tela solta a ação.
 	var button := TouchButton.new()
-	button.action = &"interact"
+	button.action = Actions.INTERACT
 	add_child(button)
 	await get_tree().process_frame
 	button.set("_finger", 0)
@@ -324,7 +325,7 @@ func _test_review_regressions() -> void:
 	button.queue_free()
 	for i in 3:
 		await get_tree().process_frame
-	check(not Input.is_action_pressed(&"interact"), "TouchButton removido não deixa a ação presa")
+	check(not Input.is_action_pressed(Actions.INTERACT), "TouchButton removido não deixa a ação presa")
 
 	# StateMachine: transição antes de inicializar não quebra; vira o estado inicial.
 	var machine := StateMachine.new()
@@ -379,6 +380,26 @@ func _test_review_regressions() -> void:
 	check(SaveSystem.load_game(slot), "Save com 'version' adulterada carrega sem erro")
 	SaveSystem.delete_save(slot)
 	SaveSystem.new_game(TEST_SLOT)
+
+
+## Actions/Groups são a única fonte dos nomes: garante que não divergem do
+## InputMap nem das listas que dependem deles.
+func _test_constants() -> void:
+	print("
+== constants ==")
+	var undeclared: Array[StringName] = []
+	for action: StringName in InputMap.get_actions():
+		if not String(action).begins_with("ui_") and action not in Actions.ALL:
+			undeclared.append(action)
+	check(undeclared.is_empty(), "Toda ação do InputMap está em Actions.ALL %s" % [undeclared])
+	var unique := {}
+	for action: StringName in Actions.ALL:
+		unique[action] = true
+	check(unique.size() == Actions.ALL.size(), "Actions.ALL sem duplicatas")
+	var remappable_ok := true
+	for action: StringName in InputBindings.REMAPPABLE:
+		remappable_ok = remappable_ok and action in Actions.ALL
+	check(remappable_ok, "InputBindings.REMAPPABLE só usa ações de Actions.ALL")
 
 
 ## Stream curto e real (onda quadrada) para testar o AudioManager.

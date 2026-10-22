@@ -7,7 +7,7 @@ const ENEMY_SCENE := preload("res://game/platformer/enemies/platformer_enemy.tsc
 
 func run(t: SmokeTest) -> void:
 	var game := await t.spawn_game(LEVEL)
-	var player := game.get_tree().get_first_node_in_group(&"player") as PlatformerPlayer
+	var player := game.get_tree().get_first_node_in_group(Groups.PLAYER) as PlatformerPlayer
 	t.check(player != null, "PlatformerPlayer instanciado")
 	if player == null:
 		await t.despawn(game)
@@ -15,7 +15,7 @@ func run(t: SmokeTest) -> void:
 
 	# Inimigos da fase: confere que existem e tira de cena para os testes de
 	# movimento serem determinísticos (os de inimigo criam os seus).
-	var level_enemies := game.get_tree().get_nodes_in_group(&"enemy")
+	var level_enemies := game.get_tree().get_nodes_in_group(Groups.ENEMY)
 	t.check(level_enemies.size() >= 2, "Fase tem inimigos")
 	for enemy: Node in level_enemies:
 		enemy.queue_free()
@@ -79,7 +79,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 			break
 		await _place(t, player, walker.global_position + Vector2(-16.0, 0.0))
 		player.face(1.0)
-		await t.tap(&"attack")
+		await t.tap(Actions.ATTACK)
 		await t.frames(25)
 		if hit == 0:
 			t.check(&"Hurt" in states, "Golpe atordoa o inimigo (Hurt)")
@@ -110,7 +110,7 @@ func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 	# Pulo: estica e solta poeira.
 	await _place(t, player, Vector2(150.0, 280.0))
 	t.spawned_effects.clear()
-	await t.tap(&"jump")
+	await t.tap(Actions.JUMP)
 	t.check(await _wait_for(t, func() -> bool: return player.squash.scale.y > 1.05),
 			"Pulo estica o personagem (stretch)")
 	t.check("dust_puff" in t.spawned_effects, "Pulo solta poeira")
@@ -135,7 +135,7 @@ func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 	player.face(1.0)
 	t.spawned_effects.clear()
 	var hitstops_before := t.hitstop_count
-	await t.tap(&"attack")
+	await t.tap(Actions.ATTACK)
 	for i in 6:
 		await t.frames(1)
 		if t.hitstop_count > hitstops_before:
@@ -152,13 +152,13 @@ func _test_movement(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	t.check(player.state_machine.current_state.name == &"Idle", "Estado inicial é Idle")
 
 	var ground_y := player.global_position.y
-	await t.hold(&"jump", 12)
+	await t.hold(Actions.JUMP, 12)
 	t.check(player.global_position.y < ground_y - 10.0, "Pulo eleva o player")
 	await t.frames(60)
 	t.check(player.is_on_floor(), "Player volta ao chão após o pulo")
 
 	var start_x := player.global_position.x
-	await t.hold(&"move_right", 20)
+	await t.hold(Actions.MOVE_RIGHT, 20)
 	t.check(player.global_position.x > start_x + 5.0, "Player anda para a direita")
 
 	var health_before := player.health.current
@@ -173,11 +173,11 @@ func _test_movement(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 
 func _test_ui(t: SmokeTest, game: Game) -> void:
 	var hud := game.find_child("HUD", true, false) as GameHUD
-	var expected: Array[StringName] = [&"jump", &"attack", &"dash", &"pause"]
+	var expected: Array[StringName] = [Actions.JUMP, Actions.ATTACK, Actions.DASH, Actions.PAUSE]
 	t.check(hud.get_hint_actions() == expected,
 			"HUD mostra as dicas definidas pela fase")
 	var tertiary := game.find_child("TertiaryButton", true, false) as TouchButton
-	t.check(tertiary.visible and tertiary.action == &"dash", "Toque: botão C = dash no platformer")
+	t.check(tertiary.visible and tertiary.action == Actions.DASH, "Toque: botão C = dash no platformer")
 
 
 func _test_attacks(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
@@ -188,7 +188,7 @@ func _test_attacks(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	await _place(t, player, dummy.global_position + Vector2(-16.0, 0.0))
 	player.face(1.0)
 	var before := dummy_health.current
-	await t.tap(&"attack")
+	await t.tap(Actions.ATTACK)
 	await t.frames(6)
 	t.check(dummy_health.current < before, "Ataque lateral acerta o alvo")
 	await t.frames(20)
@@ -196,21 +196,21 @@ func _test_attacks(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 			"Ataque termina e volta ao estado livre")
 
 	# Ataque para cima (segurando ↑).
-	Input.action_press(&"move_up")
-	await t.tap(&"attack")
+	Input.action_press(Actions.MOVE_UP)
+	await t.tap(Actions.ATTACK)
 	await t.frames(2)
 	t.check(player.attack_direction == Vector2.UP and is_equal_approx(player.attack_pivot.rotation, -PI / 2.0),
 			"Segurando ↑ o ataque vai para cima")
-	Input.action_release(&"move_up")
+	Input.action_release(Actions.MOVE_UP)
 	await t.frames(30)
 
 	# Pogo: ataque para baixo no ar acertando o alvo quica o player.
 	await _place(t, player, dummy.global_position + Vector2(0.0, -28.0))
 	before = dummy_health.current
-	Input.action_press(&"move_down")
-	await t.tap(&"attack")
+	Input.action_press(Actions.MOVE_DOWN)
+	await t.tap(Actions.ATTACK)
 	await t.frames(4)
-	Input.action_release(&"move_down")
+	Input.action_release(Actions.MOVE_DOWN)
 	t.check(player.attack_direction == Vector2.DOWN, "No ar segurando ↓ o ataque vai para baixo")
 	t.check(dummy_health.current < before and player.velocity.y < 0.0, "Pogo: acertar para baixo quica o player")
 	await t.frames(60)
@@ -220,7 +220,7 @@ func _test_dash(t: SmokeTest, player: PlatformerPlayer) -> void:
 	await _place(t, player, Vector2(150.0, 280.0))
 	player.face(1.0)
 	var start_x := player.global_position.x
-	await t.tap(&"dash")
+	await t.tap(Actions.DASH)
 	await t.frames(2)
 	t.check(player.state_machine.current_state.name == &"Dash", "Dash no chão")
 	await t.frames(10)
@@ -230,7 +230,7 @@ func _test_dash(t: SmokeTest, player: PlatformerPlayer) -> void:
 
 	# Dash no ar: sem gravidade durante o dash e só 1 por pulo.
 	await _place(t, player, Vector2(150.0, 150.0))
-	await t.tap(&"dash")
+	await t.tap(Actions.DASH)
 	await t.frames(2)
 	var dash_y := player.global_position.y
 	await t.frames(4)
@@ -259,7 +259,7 @@ func _test_abilities(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 
 	player.lock_ability(PlatformerPlayer.ABILITY_DASH)
 	await _place(t, player, Vector2(150.0, 280.0))
-	await t.tap(&"dash")
+	await t.tap(Actions.DASH)
 	await t.frames(2)
 	t.check(player.state_machine.current_state.name != &"Dash", "Habilidade bloqueada não é usada")
 	player.unlock_ability(PlatformerPlayer.ABILITY_DASH)
@@ -267,12 +267,12 @@ func _test_abilities(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 
 ## Pula do chão, espera começar a cair e tenta pular de novo no ar.
 func _try_double_jump(t: SmokeTest, player: PlatformerPlayer) -> bool:
-	await t.hold(&"jump", 6)
+	await t.hold(Actions.JUMP, 6)
 	for i in 60:
 		await t.frames(1)
 		if player.velocity.y > 0.0:
 			break
-	await t.tap(&"jump")
+	await t.tap(Actions.JUMP)
 	await t.frames(2)
 	var jumped := player.velocity.y < 0.0
 	await t.frames(80)
