@@ -32,6 +32,15 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 
 ## 4. Gameplay e arquitetura
 
+**Recomendações da revisão de arquitetura** (não aplicadas porque mudam APIs ou a estrutura das cenas):
+
+- [ ] **Base comum dos players**: `PlatformerPlayer` e `TopDownPlayer` repetem ~40 linhas (ligação com `HealthComponent`, knockback, morte com fade, `player_health_changed`). Extrair para um componente `PlayerVitals` (ou uma classe base) evita que uma correção num gênero seja esquecida no outro.
+- [ ] **Nomes de ações como constantes**: `&"jump"`, `&"attack"`… estão espalhados como literais, e um erro de digitação passa pelo analisador e falha em silêncio. Criar uma classe `Actions` (como `PhysicsLayers`) com constantes.
+- [ ] **Contratos de cena explícitos**: `Enemy` e os players dependem de caminhos fixos (`$Visual/Squash`, `$AttackPivot/AttackHitbox`…). Com `@tool` + `_get_configuration_warnings()`, o editor avisa quando um nó obrigatório falta, em vez do erro aparecer só ao rodar.
+- [ ] **`SceneLoader.change_scene` como corrotina "dispara e esquece"**: os chamadores não sabem quando a troca terminou (o analisador aponta `missing_await`). Expor uma API explícita, por exemplo `request_scene()` sem `await` mais o sinal `scene_change_finished`.
+- [ ] **Salvar configurações também ao ir para segundo plano** (`NOTIFICATION_APPLICATION_PAUSED`/`WM_CLOSE_REQUEST`): hoje elas são salvas ao fechar a tela de opções, e o sistema pode matar o app no celular antes disso.
+- [ ] **Testes unitários** (GUT/gdUnit4) para `StateMachine`, `HealthComponent`, `SafeConfig` e `InputBindings`. O smoke test cobre bem a integração, mas leva cerca de 1 min e não isola falhas.
+
 - [x] ~~Inimigo de exemplo (patrulha → persegue → windup → bote → recupera, Hurt) e times de dano~~: implementados (`game/enemies/`, `team` nos componentes).
 - [ ] **Mais inimigos**: atirador (projéteis com pooling), voador (ignora gravidade, persegue em 2D no platformer), tanque com escudo frontal, spawners e um chefe com fases (FSM de alto nível trocando "padrões" de ataque).
 - [ ] **IA**: evitar espinhos/buracos ao perseguir, desvio de obstáculos no top-down (`NavigationAgent2D` + `NavigationRegion2D`), aggro em grupo (um inimigo alerta os próximos).

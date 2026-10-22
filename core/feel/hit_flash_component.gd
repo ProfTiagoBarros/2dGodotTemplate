@@ -1,9 +1,13 @@
 class_name HitFlashComponent
 extends Node
 ## Pisca o visual (padrão: branco) quando o HealthComponent leva dano.
-## Aplica um ShaderMaterial em `target` e faz todos os CanvasItems filhos
-## herdarem o material (use_parent_material). Dica: aponte para um nó que
+## Aplica um ShaderMaterial em `target` e faz os CanvasItems filhos SEM material
+## próprio herdarem o dele (use_parent_material). Dica: aponte para um nó que
 ## agrupa só o "corpo" (sem sombra), ex.: Visual/Squash.
+##
+## Filhos que já têm material (shader de contorno, paleta...) são PRESERVADOS e
+## não piscam; para piscá-los também, adicione `flash_amount`/`flash_color` ao
+## shader deles. Filhos criados depois do _ready não são afetados.
 
 const SHADER := preload("res://core/feel/hit_flash.gdshader")
 
@@ -17,11 +21,16 @@ var _tween: Tween
 
 
 func _ready() -> void:
+	if target == null:
+		push_error("HitFlashComponent '%s': defina `target` no Inspector." % get_path())
+		return
 	_material.shader = SHADER
 	_material.set_shader_parameter(&"flash_color", flash_color)
 	target.material = _material
 	for child: Node in target.find_children("*", "CanvasItem", true, false):
-		(child as CanvasItem).use_parent_material = true
+		var item := child as CanvasItem
+		if item.material == null:
+			item.use_parent_material = true
 	if health != null:
 		health.damaged.connect(_on_damaged)
 

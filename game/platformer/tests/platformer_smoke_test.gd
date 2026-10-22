@@ -22,7 +22,7 @@ func run(t: SmokeTest) -> void:
 	await t.frames(1)
 
 	await _test_movement(t, game, player)
-	await _test_ui(t, game)
+	_test_ui(t, game)
 	await _test_attacks(t, game, player)
 	await _test_dash(t, player)
 	await _test_abilities(t, game, player)

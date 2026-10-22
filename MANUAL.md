@@ -459,6 +459,8 @@ O build Web roda em qualquer hospedagem estática. No itch.io, envie o `.zip` do
 - **Data-driven:** números de design ficam em `.tres`, não espalhados no código.
 - **Sempre ações, nunca teclas:** isso mantém o remapeamento, o gamepad e o toque funcionando de graça.
 - **Dados de fora não são confiáveis:** nunca use `ConfigFile.load()`/`str_to_var()` em arquivos que o jogador pode editar. Use `SafeConfig` e valide os tipos (veja "Segurança e performance" no [README](README.md#segurança-e-performance)).
+- **Pausa:** use `PauseController.request(&"motivo")`/`release(&"motivo")`, nunca `get_tree().paused` direto (cutscenes, diálogos e inventário também são "motivos" de pausa).
+- **Validação em tempo de execução:** não use `assert` para erros que podem acontecer num build exportado, porque ele é removido em release. Valide, registre com `Log.error` e caia num comportamento seguro.
 
 ### Usando o Claude Code no seu jogo
 

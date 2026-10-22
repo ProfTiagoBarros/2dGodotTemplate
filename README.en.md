@@ -213,6 +213,7 @@ Gameplay commands live in `game/game_debug_commands.gd`. `core/` only has the ge
 ### Patterns
 
 - **Call down, signal up**: parents call methods on children and children emit signals. `EventBus` is only used when systems don't know each other (e.g. the HUD never references the Player).
+- **Pause by reason**: nobody writes `get_tree().paused` directly. Each system requests and releases pause with a reason (`PauseController.request(&"menu")` / `release(&"menu")`), and the game only resumes when no reason is left. That way, closing the debug console doesn't unpause the game while the pause menu is open.
 - **Composition with components**: health and damage are reusable nodes, the same in both genres. Hitboxes and hurtboxes have a **`team`** (`player`, `enemy` or empty = neutral): a hurtbox ignores hits from its own team and its own entity (`owner`). Enemies don't hurt each other, the player doesn't hurt itself, and (neutral) spikes hurt everyone.
 - **Node-based state machine**: each state is a child node with `enter/exit/update/physics_update/handle_input`. The player exposes movement primitives and the states decide the transitions.
 - **Data-driven Resources**: `PlatformerStats` and `TopDownStats` are `Resource`s. Create different `.tres` files per character or power-up.
@@ -309,7 +310,7 @@ Files in `user://` (settings, saves) can be edited by the player or shared betwe
 
 - **Never use `ConfigFile.load()`, `str_to_var()` or `bytes_to_var()` with objects on outside data.** Godot's parser builds objects and **loads scripts** from text (`Object(...)`, `Resource("...")`), which means it executes code. `settings.cfg` is read through **`SafeConfig`** (`core/utils/`), which rejects those constructors before parsing. Values still go through `Settings.is_valid_value` (only known keys with the right type, and volume clamped to 0–1).
 - **JSON saves:** the JSON parser only produces primitive types. Still validate types when reading: `SaveSystem` rejects `data` that isn't a dictionary, and `SaveSystem.get_int("key")` returns the default when the value was tampered with.
-- **Debug builds are not for distribution:** they include the console and cheats. CI names the APK built without a release keystore `...-android-debug`.
+- **Debug builds are not for distribution:** they include the console and cheats. CI names the APK built without a release keystore `...-android-debug` and **doesn't publish it in the Release**: it stays a test artifact only.
 
 ### CI
 

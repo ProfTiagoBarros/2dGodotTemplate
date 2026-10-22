@@ -7,6 +7,7 @@ const HINT_FONT_SIZE := 10
 const TOAST_DURATION := 2.5
 
 var _toast_tween: Tween
+var _health_tween: Tween
 
 @onready var _health_bar: ProgressBar = %HealthBar
 @onready var _hints: VBoxContainer = %Hints
@@ -59,5 +60,8 @@ func _on_ability_unlocked(ability: StringName) -> void:
 
 func _on_player_health_changed(current: int, max_health: int) -> void:
 	_health_bar.max_value = max_health
-	var tween := create_tween()
-	tween.tween_property(_health_bar, "value", float(current), 0.15)
+	# Um tween por vez: danos seguidos não podem animar a barra em "cabo de guerra".
+	if _health_tween != null:
+		_health_tween.kill()
+	_health_tween = create_tween()
+	_health_tween.tween_property(_health_bar, "value", float(current), 0.15)

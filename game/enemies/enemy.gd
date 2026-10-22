@@ -22,8 +22,7 @@ var facing := Vector2.RIGHT
 
 var _attacking := false
 var _windup_tween: Tween
-# Começa em fase aleatória: espalha os raycasts dos inimigos entre frames.
-var _perception_cooldown := randf() * 0.1
+var _perception_cooldown := 0.0
 
 @onready var visual: Node2D = $Visual
 @onready var squash: SquashStretch = $Visual/Squash
@@ -38,6 +37,8 @@ var _perception_cooldown := randf() * 0.1
 
 func _ready() -> void:
 	add_to_group(&"enemy")
+	# Começa em fase aleatória: espalha os raycasts dos inimigos entre frames.
+	_perception_cooldown = randf() * perception_interval
 	health.damaged.connect(_on_damaged)
 	health.died.connect(_on_died)
 	set_attack_active(false)

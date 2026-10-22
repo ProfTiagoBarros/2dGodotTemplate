@@ -12,6 +12,9 @@ const UI_BUS := &"UI"
 
 var _music_players: Array[AudioStreamPlayer] = []
 var _active_music := 0
+## Transição de música em andamento. Uma nova transição MATA a anterior: senão o
+## `stop` agendado pelo fade antigo pararia a música nova (mesmo player reusado).
+var _music_tween: Tween
 var _sfx_pool: Array[AudioStreamPlayer] = []
 var _next_sfx := 0
 var _ui_player: AudioStreamPlayer
@@ -34,26 +37,37 @@ func play_music(stream: AudioStream, fade_time: float = 1.0) -> void:
 		stop_music(fade_time)
 		return
 
+	_kill_music_tween()
 	_active_music = 1 - _active_music
 	var incoming := _music_players[_active_music]
 	incoming.stream = stream
 	incoming.volume_linear = 0.0
 	incoming.play()
 
-	var tween := create_tween().set_parallel()
-	tween.tween_property(incoming, "volume_linear", 1.0, fade_time)
+	_music_tween = create_tween().set_parallel()
+	_music_tween.tween_property(incoming, "volume_linear", 1.0, fade_time)
 	if current.playing:
-		tween.tween_property(current, "volume_linear", 0.0, fade_time)
-		tween.chain().tween_callback(current.stop)
+		_music_tween.tween_property(current, "volume_linear", 0.0, fade_time)
+		_music_tween.chain().tween_callback(current.stop)
 
 
 func stop_music(fade_time: float = 1.0) -> void:
 	var current := _music_players[_active_music]
 	if not current.playing:
 		return
-	var tween := create_tween()
-	tween.tween_property(current, "volume_linear", 0.0, fade_time)
-	tween.tween_callback(current.stop)
+	_kill_music_tween()
+	_music_tween = create_tween()
+	_music_tween.tween_property(current, "volume_linear", 0.0, fade_time)
+	_music_tween.tween_callback(current.stop)
+
+
+func _kill_music_tween() -> void:
+	if _music_tween != null and _music_tween.is_valid():
+		_music_tween.kill()
+	# O player que NÃO é o ativo não deve continuar soando pela metade do fade.
+	var inactive := _music_players[1 - _active_music]
+	if inactive.playing:
+		inactive.stop()
 
 
 ## Toca um efeito não posicional. `pitch_variation` (0..1) evita repetição monótona.

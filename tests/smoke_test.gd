@@ -36,6 +36,7 @@ func _ready() -> void:
 	await _test_debug_tools()
 	await _test_game_feel()
 	_test_security()
+	await _test_review_regressions()
 
 	var suites_run := 0
 	for path: String in GENRE_SUITES:
@@ -293,6 +294,104 @@ func _test_security() -> void:
 	check(SaveSystem.load_game(slot) and SaveSystem.get_int("deaths") == 0, "Campo numérico adulterado vira o padrão")
 	SaveSystem.delete_save(slot)
 	SaveSystem.new_game(TEST_SLOT)
+
+
+## Regressões dos bugs encontrados na revisão de arquitetura (cada um foi
+## reproduzido antes da correção).
+func _test_review_regressions() -> void:
+	print("\n== review_regressions ==")
+
+	# Pausa coordenada: fechar o console não pode despausar com o menu aberto.
+	var game := await spawn_game(ScenePaths.FIRST_LEVEL)
+	var pause_menu := game.get_node("PauseMenu")
+	DebugTools.open_console()
+	pause_menu.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	DebugTools.close_console()
+	check(get_tree().paused and (pause_menu.get_node("%Root") as Control).visible,
+			"Fechar o console mantém o jogo pausado se o menu de pausa abriu")
+	pause_menu.call(&"set_paused", false)
+	check(not get_tree().paused, "Fechar o menu de pausa despausa (nenhum outro motivo)")
+	await despawn(game)
+	check(not PauseController.is_paused(), "Cena destruída não deixa motivo de pausa preso")
+
+	# TouchButton removido com o dedo na tela solta a ação.
+	var button := TouchButton.new()
+	button.action = &"interact"
+	add_child(button)
+	await get_tree().process_frame
+	button.set("_finger", 0)
+	button.call("_send", true)
+	button.queue_free()
+	for i in 3:
+		await get_tree().process_frame
+	check(not Input.is_action_pressed(&"interact"), "TouchButton removido não deixa a ação presa")
+
+	# StateMachine: transição antes de inicializar não quebra; vira o estado inicial.
+	var machine := StateMachine.new()
+	var idle := State.new()
+	idle.name = "Idle"
+	var hurt := State.new()
+	hurt.name = "Hurt"
+	machine.add_child(idle)
+	machine.add_child(hurt)
+	machine.initial_state = idle
+	machine.transition_to(&"Hurt")
+	add_child(machine)
+	await get_tree().process_frame
+	check(machine.current_state == hurt, "StateMachine aceita transição antes de inicializar")
+	machine.queue_free()
+
+	# HitFlash preserva o shader próprio de um filho.
+	var target := Node2D.new()
+	var plain := Polygon2D.new()
+	var custom := Polygon2D.new()
+	var own_material := ShaderMaterial.new()
+	custom.material = own_material
+	target.add_child(plain)
+	target.add_child(custom)
+	add_child(target)
+	var flash := HitFlashComponent.new()
+	flash.target = target
+	add_child(flash)
+	check(plain.use_parent_material and custom.material == own_material and not custom.use_parent_material,
+			"HitFlash não sobrescreve material próprio dos filhos")
+	target.queue_free()
+	flash.queue_free()
+
+	# Crossfade: A -> B -> A em sequência rápida termina tocando A.
+	var a := _test_stream()
+	var b := _test_stream()
+	AudioManager.play_music(a, 0.5)
+	await real_seconds(0.1)
+	AudioManager.play_music(b, 0.5)
+	await real_seconds(0.1)
+	AudioManager.play_music(a, 0.5)
+	await real_seconds(0.9)
+	var music_ok := false
+	for player: AudioStreamPlayer in AudioManager.get("_music_players"):
+		music_ok = music_ok or (player.stream == a and player.playing)
+	check(music_ok, "Crossfade rápido A→B→A termina tocando A")
+	AudioManager.stop_music(0.0)
+
+	# Save com 'version' adulterada não quebra a migração.
+	var slot := TEST_SLOT + 2
+	_write_text("%s/slot_%d.json" % [SaveSystem.SAVE_DIR, slot], '{"version": [1], "data": {}}')
+	check(SaveSystem.load_game(slot), "Save com 'version' adulterada carrega sem erro")
+	SaveSystem.delete_save(slot)
+	SaveSystem.new_game(TEST_SLOT)
+
+
+## Stream curto e real (onda quadrada) para testar o AudioManager.
+func _test_stream() -> AudioStreamWAV:
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_8_BITS
+	wav.mix_rate = 8000
+	var bytes := PackedByteArray()
+	bytes.resize(8000 * 3)
+	for i in bytes.size():
+		bytes[i] = 100 if (i / 20) % 2 == 0 else 156
+	wav.data = bytes
+	return wav
 
 
 func _write_text(path: String, text: String) -> void:

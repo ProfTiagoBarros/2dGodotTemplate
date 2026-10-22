@@ -3,6 +3,7 @@ extends CanvasLayer
 ## ou vai para segundo plano (essencial em mobile) e trata o "voltar" do Android.
 
 const SETTINGS_MENU := preload("res://ui/settings_menu/settings_menu.tscn")
+const PAUSE_REASON := &"pause_menu"
 
 var _settings_menu: SettingsMenu
 
@@ -23,7 +24,11 @@ func _ready() -> void:
 func set_paused(paused: bool) -> void:
 	if _settings_menu != null:
 		return
-	get_tree().paused = paused
+	# Motivo próprio: outro sistema (ex.: console de debug) pode manter a pausa.
+	if paused:
+		PauseController.request(PAUSE_REASON)
+	else:
+		PauseController.release(PAUSE_REASON)
 	_root.visible = paused
 	EventBus.game_paused.emit(paused)
 	if paused:
@@ -32,7 +37,7 @@ func set_paused(paused: bool) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _settings_menu == null and event.is_action_pressed(&"pause"):
-		set_paused(not get_tree().paused)
+		set_paused(not is_open())
 		get_viewport().set_input_as_handled()
 
 
@@ -43,7 +48,7 @@ func _notification(what: int) -> void:
 		NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED:
 			set_paused(true)
 		NOTIFICATION_WM_GO_BACK_REQUEST:
-			set_paused(not get_tree().paused)
+			set_paused(not is_open())
 
 
 func _open_settings() -> void:
@@ -61,3 +66,12 @@ func _on_settings_closed() -> void:
 
 func _go_to_main_menu() -> void:
 	SceneLoader.change_scene(ScenePaths.MAIN_MENU)
+
+
+func is_open() -> bool:
+	return PauseController.is_requested(PAUSE_REASON)
+
+
+func _exit_tree() -> void:
+	# Liberado aberto (troca de cena, cena destruída): não deixa o motivo "preso".
+	PauseController.release(PAUSE_REASON)

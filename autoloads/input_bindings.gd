@@ -114,7 +114,9 @@ static func kind_of(event: InputEvent) -> int:
 #region Remapeamento
 
 ## Troca o atalho principal de `action`. Se outra ação já usava o novo atalho,
-## ela recebe o atalho antigo (troca), para nenhuma ação ficar sem tecla.
+## ela recebe o atalho antigo (troca). Exceção: se `action` não tinha atalho
+## desse tipo, não há o que trocar e a outra ação fica sem esse atalho
+## (a tela de Controles mostra "—" e o jogador pode definir outro).
 func rebind(action: StringName, kind: Kind, event: InputEvent) -> void:
 	var new_event := _normalized(event)
 	if new_event == null or kind_of(new_event) != kind:

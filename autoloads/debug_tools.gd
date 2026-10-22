@@ -17,6 +17,7 @@ const OVERLAY_SCENE := "res://ui/debug/debug_overlay.tscn"
 const CONSOLE_SCENE := "res://ui/debug/debug_console.tscn"
 ## Scripts com `func register() -> void` que registram comandos/watches do jogo.
 const COMMAND_PROVIDERS: Array[String] = ["res://game/game_debug_commands.gd"]
+const PAUSE_REASON := &"debug_console"
 
 var enabled := OS.is_debug_build()
 
@@ -26,7 +27,6 @@ var _providers: Array[Object] = []
 var _logger: ConsoleLogger
 var _overlay: DebugOverlay
 var _console: DebugConsole
-var _paused_before_console := false
 
 
 func _ready() -> void:
@@ -156,8 +156,7 @@ func toggle_console() -> void:
 func open_console() -> void:
 	if not enabled or is_console_open():
 		return
-	_paused_before_console = get_tree().paused
-	get_tree().paused = true
+	PauseController.request(PAUSE_REASON)
 	_console.open()
 
 
@@ -165,7 +164,9 @@ func close_console() -> void:
 	if not is_console_open():
 		return
 	_console.close()
-	get_tree().paused = _paused_before_console
+	# Só remove o MOTIVO do console: se o menu de pausa abriu nesse meio-tempo,
+	# o jogo continua pausado.
+	PauseController.release(PAUSE_REASON)
 
 
 func print_console(text: String, color: Color = Color.WHITE) -> void:

@@ -459,6 +459,8 @@ The Web build runs on any static hosting. On itch.io, upload the Web `.zip` as "
 - **Data-driven:** design numbers live in `.tres` files, not scattered through code.
 - **Always actions, never keys:** that keeps remapping, gamepad and touch working for free.
 - **Outside data is untrusted:** never use `ConfigFile.load()`/`str_to_var()` on files players can edit. Use `SafeConfig` and validate types (see "Security and performance" in the [README](README.en.md#security-and-performance)).
+- **Pausing:** use `PauseController.request(&"reason")`/`release(&"reason")`, never `get_tree().paused` directly (cutscenes, dialogs and inventory are pause "reasons" too).
+- **Runtime validation:** don't use `assert` for errors that can happen in an exported build, because asserts are stripped from release. Validate, report with `Log.error` and fall back to safe behavior.
 
 ### Using Claude Code on your game
 

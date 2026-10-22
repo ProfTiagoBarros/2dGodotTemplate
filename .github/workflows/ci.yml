@@ -165,6 +165,12 @@ jobs:
           mkdir -p release
           for dir in artifacts/*/; do
             name="$(basename "$dir")"
+            # Builds de debug (console + cheats) nunca vão para o Release público;
+            # continuam disponíveis como artifact da execução para testes.
+            if [[ "$name" == *-debug ]]; then
+              echo "::warning::$name não publicado no Release (build de debug). Configure a keystore de release."
+              continue
+            fi
             (cd "$dir" && zip -qr "$GITHUB_WORKSPACE/release/$name-${GITHUB_REF_NAME}.zip" .)
           done
           ls -la release

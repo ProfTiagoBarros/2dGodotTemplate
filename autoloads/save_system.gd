@@ -116,7 +116,12 @@ func _read_json(path: String) -> Dictionary:
 
 ## Atualiza saves antigos para o schema atual, um passo de versão por vez.
 func _migrate(payload: Dictionary) -> Dictionary:
-	var version := int(payload.get("version", 0))
+	var raw_version: Variant = payload.get("version", 0)
+	var version := int(raw_version) if raw_version is int or raw_version is float else 0
+	if version > SAVE_VERSION:
+		# Save de uma versão MAIS NOVA do jogo: campos desconhecidos são mantidos em
+		# `data`, mas o formato pode não ser compatível com este build.
+		Log.warn("SaveSystem: save v%d é mais novo que este jogo (v%d)." % [version, SAVE_VERSION])
 	while version < SAVE_VERSION:
 		match version:
 			0:

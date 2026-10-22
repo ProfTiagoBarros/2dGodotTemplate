@@ -45,7 +45,8 @@ func change_scene(path: String, fade_time: float = DEFAULT_FADE_TIME) -> void:
 
 	var packed: PackedScene = await _wait_for_load(path)
 	if packed != null:
-		get_tree().paused = false
+		# A cena nova começa rodando: descarta todos os motivos de pausa da anterior.
+		PauseController.clear()
 		get_tree().change_scene_to_packed(packed)
 		await get_tree().process_frame
 

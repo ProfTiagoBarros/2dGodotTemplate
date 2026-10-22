@@ -213,6 +213,7 @@ Os comandos de gameplay ficam em `game/game_debug_commands.gd`. O `core/` só te
 ### Padrões usados
 
 - **Call down, signal up**: o pai chama métodos dos filhos e os filhos emitem sinais. O `EventBus` só entra quando os sistemas não se conhecem (ex.: a HUD nunca referencia o Player).
+- **Pausa por motivos**: ninguém mexe em `get_tree().paused` direto. Cada sistema pede e libera a pausa com um motivo (`PauseController.request(&"menu")` / `release(&"menu")`), e o jogo só volta a rodar quando nenhum motivo resta. Assim, fechar o console de debug não despausa o jogo com o menu de pausa aberto.
 - **Composição com componentes**: vida e dano são nós reutilizáveis, iguais nos dois gêneros. Hitboxes e hurtboxes têm um **`team`** (`player`, `enemy` ou vazio = neutro): uma hurtbox ignora golpes do próprio time e da própria entidade (`owner`). Inimigos não se ferem entre si, o player não se fere, e espinhos (neutros) ferem todos.
 - **State Machine baseada em nós**: cada estado é um nó filho com `enter/exit/update/physics_update/handle_input`. O player expõe primitivas de movimento e os estados decidem as transições.
 - **Data-driven com Resources**: `PlatformerStats` e `TopDownStats` são `Resource`s. Crie `.tres` diferentes por personagem ou power-up.
@@ -309,7 +310,7 @@ Arquivos em `user://` (configurações, saves) podem ser editados pelo jogador o
 
 - **Nunca use `ConfigFile.load()`, `str_to_var()` ou `bytes_to_var()` com objetos em dados de fora.** O parser do Godot constrói objetos e **carrega scripts** a partir do texto (`Object(...)`, `Resource("...")`), ou seja, executa código. O `settings.cfg` é lido por **`SafeConfig`** (`core/utils/`), que recusa esses construtores antes do parse. Os valores ainda passam por `Settings.is_valid_value` (só chaves conhecidas, com o tipo certo, e volume limitado a 0–1).
 - **Saves em JSON:** o parser de JSON só produz tipos primitivos. Mesmo assim, valide os tipos ao ler: `SaveSystem` recusa `data` que não seja dicionário, e `SaveSystem.get_int("chave")` devolve o padrão se o valor foi adulterado.
-- **Builds de debug não são para distribuir:** eles têm console e cheats. O CI marca o APK sem keystore de release como `...-android-debug`.
+- **Builds de debug não são para distribuir:** eles têm console e cheats. O CI marca o APK sem keystore de release como `...-android-debug` e **não o publica no Release**: ele fica só como artifact de teste.
 
 ### CI
 

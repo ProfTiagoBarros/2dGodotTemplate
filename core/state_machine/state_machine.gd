@@ -9,6 +9,8 @@ signal state_changed(from: StringName, to: StringName)
 
 var current_state: State
 var _states: Dictionary[StringName, State] = {}
+var _transitioning := false
+var _queued_transition: Array = []
 
 
 func _ready() -> void:
@@ -29,16 +31,35 @@ func _ready() -> void:
 
 func transition_to(state_name: StringName, data: Dictionary = {}) -> void:
 	var next: State = _states.get(state_name)
+	if next == null and _states.is_empty():
+		# Antes do _ready os estados ainda não foram registrados: busca pelo nó.
+		next = get_node_or_null(NodePath(state_name)) as State
 	if next == null:
 		Log.error("StateMachine: estado inexistente '%s'." % state_name)
 		return
+	if current_state == null:
+		# Ainda inicializando (ex.: dano no mesmo frame em que a entidade nasce):
+		# vira o estado inicial em vez de quebrar.
+		initial_state = next
+		return
+	if _transitioning:
+		# Transição pedida dentro de enter()/exit(): executa depois da atual,
+		# para os sinais e a ordem enter/exit não se embaralharem.
+		_queued_transition = [state_name, data]
+		return
 	if next == current_state:
 		return
+	_transitioning = true
 	var previous := current_state.name
 	current_state.exit()
 	current_state = next
 	current_state.enter(previous, data)
 	state_changed.emit(previous, current_state.name)
+	_transitioning = false
+	if not _queued_transition.is_empty():
+		var queued := _queued_transition
+		_queued_transition = []
+		transition_to(queued[0], queued[1])
 
 
 func _unhandled_input(event: InputEvent) -> void:

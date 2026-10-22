@@ -7,6 +7,27 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), 
 
 ## [Não lançado]
 
+### Adicionado
+
+- `PauseController` (`core/utils/`): pausa coordenada por motivos (menu, console…). O jogo só despausa quando nenhum sistema pede pausa.
+
+### Corrigido
+
+Encontrados na revisão de arquitetura; todos reproduzidos antes da correção e cobertos por teste:
+
+- Fechar o console de debug despausava o jogo com o menu de pausa aberto.
+- Crossfade de música em sequência rápida (A → B → A) deixava o jogo mudo.
+- Botão de toque removido com o dedo na tela deixava a ação pressionada para sempre.
+- Fase inválida derrubava o jogo em builds de release (dependia de `assert`); agora registra o erro e volta ao menu.
+- `StateMachine` quebrava com transição antes de inicializar e embaralhava transições pedidas dentro de `enter()`/`exit()`.
+- `HitFlashComponent` descartava o shader próprio dos filhos (contorno, paleta…).
+- Save com `version` adulterada gerava erro na migração; save de versão mais nova agora gera aviso.
+- Barra de vida com animações sobrepostas em danos seguidos; fase inicial da percepção dos inimigos ignorava `perception_interval`.
+
+### Segurança
+
+- O CI não publica mais builds de debug (console e cheats) no Release; eles continuam como artifacts de teste.
+
 ## [0.1.0] - 2026-10-09
 
 Primeira versão do template, desenvolvida com assistência de IA (Claude, da Anthropic). Veja [Créditos e uso de IA](README.md#créditos-e-uso-de-ia).

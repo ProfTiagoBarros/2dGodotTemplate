@@ -20,10 +20,17 @@ static var level_override := ""
 func _ready() -> void:
 	if not level_override.is_empty():
 		level_path = level_override
-	var packed := load(level_path) as PackedScene
-	assert(packed != null, "Fase não encontrada: %s" % level_path)
+	# Validação em tempo de execução (assert some em builds de release).
+	var packed := load(level_path) as PackedScene if ResourceLoader.exists(level_path) else null
+	var instance := packed.instantiate() if packed != null else null
+	var level := instance as Level
+	if level == null:
+		Log.error("Game: fase inválida '%s' (inexistente ou a raiz não usa level.gd)." % level_path)
+		if instance != null:
+			instance.free()
+		SceneLoader.change_scene.call_deferred(ScenePaths.MAIN_MENU)
+		return
 	Log.info("Fase carregada: %s" % level_path.get_file())
-	var level := packed.instantiate() as Level
 	_world.add_child(level)
 	_touch_controls.configure(level.touch_actions)
 	_hud.set_hint_actions(level.hud_hint_actions)

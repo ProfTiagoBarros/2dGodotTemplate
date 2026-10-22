@@ -29,7 +29,10 @@ func _input(event: InputEvent) -> void:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree() and _finger != -1:
+	# Escondido ou removido da árvore (troca de cena) com o dedo ainda na tela:
+	# solta a ação, senão ela fica "pressionada para sempre" no Input.
+	var hidden := what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree()
+	if (hidden or what == NOTIFICATION_EXIT_TREE) and _finger != -1:
 		_finger = -1
 		_send(false)
 
@@ -58,4 +61,5 @@ func _send(pressed: bool) -> void:
 	event.pressed = pressed
 	event.strength = 1.0 if pressed else 0.0
 	Input.parse_input_event(event)
-	queue_redraw()
+	if is_inside_tree():
+		queue_redraw()
