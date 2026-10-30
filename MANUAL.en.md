@@ -18,6 +18,7 @@ A practical guide to starting a new game from the template, making the initial c
 8. [Tips to get the most out of it](#8-tips-to-get-the-most-out-of-it)
 9. [Troubleshooting](#9-troubleshooting)
 10. [New game quick checklist](#10-new-game-quick-checklist)
+11. [Full recipe: a game from start to first build](#11-full-recipe-a-game-from-start-to-first-build)
 
 ---
 
@@ -70,19 +71,37 @@ If you haven't yet: in the template repository on GitHub, go to *Settings → Ge
    level topdown_level_01
    ```
 
-### Step 3: pick the genre (only once)
+### Step 3: set up the game with the wizard (only once)
 
-1. In the editor, open `tools/setup_genre.gd`.
-2. Change the line `const GENRE := "platformer"` to the genre you want (`"platformer"` or `"topdown"`).
-3. With the script open, use **File → Run** (Ctrl+Shift+X).
-4. Use **Project → Reload Current Project**.
+The template ships a **wizard that asks about your game** and shapes the project accordingly, removing what won't be used. Less code to maintain, and less context for Claude Code to read in every session.
 
-What the setup does:
-- Points the game's first level to the chosen genre.
-- Moves the **other** genre's folder to the **system trash**, where it can be recovered.
-- Removes from the input map the actions only the other genre used, such as jump in top-down or aiming in the platformer.
+1. In the editor: **Project → Tools → Configurar novo jogo…** (the wizard's UI is in Portuguese).
+2. Answer the questions:
 
-> Tip: press **F5** again after the setup to confirm everything works. The `tools/` folder can be deleted afterwards.
+   | Question | What changes |
+   |---|---|
+   | **Game name** | Project name (and the save folder), menu title (`GAME_TITLE`) and build file names in CI (`GAME_SLUG`) |
+   | **Game type** | *Platformer* or *top-down* keep only that module. *Base only* (puzzle, cards, narrative…) removes both and creates an empty level at `game/levels/level_01.tscn`, keeping menus, saves, controls, debug and CI |
+   | **Platforms** | PC, Web and/or Android. Platforms left out are removed from `export_presets.cfg` and CI |
+   | **Documentation** | Turns the template docs into game docs: a new `README.md`, the template README becomes `TEMPLATE.md`, a fresh `CHANGELOG.md` and a slimmer `CLAUDE.md` (without the template maintenance rules or the removed genre's sections). Optionally keeps the English docs and the community files (CONTRIBUTING, issue/PR templates) |
+   | **At the end** | Removes the setup tools (`tools/` and the wizard itself), which have no further use |
+
+3. The window shows **what will happen** before you confirm. When you click **Configurar**, the editor restarts on its own.
+4. Press **F5** to check.
+
+Everything removed goes to the **system trash**. Since the repository was just created (Step 1), you can undo everything with:
+
+```bash
+git checkout -- . && git clean -fd
+```
+
+**From the command line** (automation, or if you prefer the terminal), the same questions become parameters. Use `--dry-run` to only see the plan:
+
+```bash
+godot --headless --path . -s res://tools/setup_project_cli.gd -- --name="Cat Adventure" --genre=platformer --platforms=pc,mobile --dry-run
+```
+
+> The wizard asks through a window because on Windows Godot is a GUI app and doesn't show prompts in the terminal. The genre-only setup (`tools/setup_genre.gd`, **File → Run**) still exists, but the wizard does that and more.
 
 ### Step 4: run the tests
 
@@ -147,22 +166,22 @@ Docs: [rulesets](https://docs.github.com/en/repositories/configuring-branches-an
 
 ## 4. Initial changes: your game's identity
 
-Do this right at the start, because some of these values are hard to change after the game is published.
+Do this right at the start, because some of these values are hard to change after the game is published. The wizard from [Step 3](#step-3-set-up-the-game-with-the-wizard-only-once) already handles the items marked with ✔.
 
 | What | Where | Notes |
 |---|---|---|
-| **Project name** | *Project Settings → Application → Config → Name* | Also changes the user's saves/settings folder |
-| **Menu title** | `localization/translations.csv`, key `GAME_TITLE` | One text per language (`en`, `pt_BR`) |
+| ✔ **Project name** | *Project Settings → Application → Config → Name* | Also changes the user's saves/settings folder |
+| ✔ **Menu title** | `localization/translations.csv`, key `GAME_TITLE` | One text per language (`en`, `pt_BR`) |
 | **Initial version** | *Project Settings → Application → Config → Version* | Afterwards CI fills it in from tags (`v1.0.0`) |
 | **Icon** | Replace `icon.svg` | For Android, also configure the adaptive icons in the preset |
 | **Android app ID** | `export_presets.cfg` → `package/unique_name` | Format `com.yourstudio.yourgame`. **Don't change it after publishing** on the Play Store |
 | **Android app name** | `export_presets.cfg` → `package/name` | The name shown on the phone |
-| **Build file names** | `.github/workflows/ci.yml` → `GAME_SLUG` | E.g. `my-metroidvania` |
-| **Game README** | `README.md` | Replace the top description with your game's. Keep `MANUAL.md` and `CLAUDE.md` as reference |
+| ✔ **Build file names** | `.github/workflows/ci.yml` → `GAME_SLUG` | E.g. `my-metroidvania` |
+| ✔ **Game README** | `README.md` | The wizard creates a game README and keeps the template's as `TEMPLATE.md`. Fill it in with your game's description, images and badges |
 | **Badges and links** | Top of `README.md` and `README.en.md` | Replace `ProfTiagoBarros/2dGodotTemplate` with your repository (CI badge) |
 | **Game license** | `LICENSE` | The template is MIT. Your game can use another license (or none, if closed source); keep the template's copyright notice in a third-party licenses file or in the credits |
-| **History** | `CHANGELOG.md` | Start a new history for the game, deleting the template's entries |
-| **PR reviewer** | `.github/CODEOWNERS` | Replace `@ProfTiagoBarros` with your user or team |
+| ✔ **History** | `CHANGELOG.md` | The wizard starts a new history for the game |
+| **PR reviewer** | `.github/CODEOWNERS` | Replace `@ProfTiagoBarros` with your user or team (the wizard removes the file if you don't keep the community files) |
 | **Base resolution** | *Project Settings → Display → Window* | Default 640×360 (pixel art). For HD art use 1280×720 and switch the texture filter to *Linear* |
 | **Mobile orientation** | *Project Settings → Display → Window → Handheld* | Landscape by default. For portrait games, use `sensor_portrait` and adjust the base resolution |
 
@@ -474,6 +493,44 @@ The Web build runs on any static hosting. On itch.io, upload the Web `.zip` as "
 
 Always ask it to **run the smoke test** at the end. That's your guarantee nothing broke.
 
+To spend **fewer tokens and less time**:
+
+- **Run the Step 3 wizard before anything else.** Every module, doc or rule left in the project is context the AI may read for nothing.
+- **Make `CLAUDE.md` about your game:** add what is specific (characters, custom systems, decisions already made) and remove what no longer applies. It's read at the start of every session.
+- **Ask for small, specific tasks that point to a recipe:** "add wall jump following section 5.5 of the MANUAL" costs far less than "improve the game".
+- **One task per session** when tasks are unrelated. A long conversation accumulates context that makes every answer more expensive.
+- **Delete examples you won't use** (enemies, levels, training dummy), adjusting the tests that depended on them.
+
+### Template or start from scratch?
+
+Using the template saves time and tokens **when the game needs what it provides**. The expensive part of a game isn't the character walking; it's the infrastructure: safe versioned saves, settings, control remapping, menus, pause, mobile touch, CI with builds and debug tools. It's already done, tested and has had several real defects fixed. On top of that, `CLAUDE.md` and the tests make the AI get things right more often and redo less.
+
+The template also has costs: rules and docs you won't use (the wizard removes most of them), a smoke test that takes about 1 minute, and an architecture designed for action games, which becomes dead weight in other genres.
+
+| Kind of game | Best path |
+|---|---|
+| Platformer, metroidvania, top-down action | **Use the template** with the matching genre. It's what it was made for |
+| Another 2D genre that needs menus, saves and controls (puzzle, cards, narrative) | Use the template with the **base only** option |
+| Throwaway game jam prototype (a few hours) | Starting from scratch may be faster |
+| Small game with no saves, no menus and no configurable controls | From scratch |
+
+### What about 3D games?
+
+This template is **2D**, but much of it doesn't depend on dimension: the autoloads (Log, Settings, SaveSystem, AudioManager, SceneLoader, InputManager/InputBindings, DebugTools), `PauseController`, `SafeConfig`, menus and UI, localization, the `StateMachine`, the tests, the CI and the rules in `CLAUDE.md` and [REVIEW_GUIDE.en.md](REVIEW_GUIDE.en.md). Rebuilding that for every 3D game would be waste.
+
+A **complete** 3D template built before the game, however, tends to pay off poorly:
+
+- **What changes in 3D is exactly what's hardest to generalize:** camera (third person with collision, first person, isometric), `CharacterBody3D` movement, animation (AnimationTree, blend spaces, root motion), lighting, LOD and mobile performance.
+- **3D genres differ far more** from each other (FPS, third-person action, racing, puzzle) than platformer and top-down do.
+- **The 3D bottleneck is usually art and assets**, not code, and no template solves that.
+- **AI is weaker in 3D:** it can't "see" the scene, so tuning camera and collision takes more rounds of you testing. 3D scenes are also bigger files that cost more tokens to read.
+
+**Recommendation:**
+
+1. To make both 2D **and** 3D games, split the shared part of this template into a "base template" (item in [IMPROVEMENTS.md](IMPROVEMENTS.md)).
+2. For the first 3D game, start from that base and use ready-made addons for the hard parts (e.g. **Phantom Camera** for cameras). Also look at community templates such as **COGITO** (first person) and the official Godot demos.
+3. Only after 1 or 2 3D games of the same kind, extract a 3D genre module, as was done here with platformer and top-down. Good templates come from real games, not the other way around.
+
 ### Keeping the template and games up to date
 
 Improved something generic in a game, like a new component in `core/`? Bring it back to the template so future games start with it. The reverse works too: to bring a template improvement into a game in progress:
@@ -503,7 +560,7 @@ git cherry-pick <commit-hash>
 | Problem | Solution |
 |---|---|
 | "Failed loading resource" errors on first open or after moving files | Use *Project → Reload Current Project*. If it persists, close Godot, delete the `.godot/` folder and open again (it's regenerated) |
-| I ran the setup with the wrong genre | If the project was already committed, `git checkout -- .` undoes everything (including restoring the deleted folder). Without a commit, restore the folder from the **system trash** and undo the change in `scene_paths.gd`. Then run the setup again |
+| I ran the wizard (or the setup) with the wrong option | If the project was already committed, `git checkout -- . && git clean -fd` undoes everything: it restores what was deleted and removes the created files (careful: `clean` also deletes your own files that were never committed). Without a commit, restore the files from the **system trash**. Then run it again |
 | Touch controls don't show on PC | In *Settings → Touch Controls*, choose **Always**. To simulate touch with the mouse, enable *Project Settings → Input Devices → Pointing → Emulate Touch From Mouse* |
 | Tapping the phone screen triggers a mouse action | The action's mouse event needs `"device":32` (real mouse) in `project.godot`, as in `attack` |
 | "Weird" settings or bindings | Delete `settings.cfg` in `%APPDATA%\Godot\app_userdata\<Project Name>\` (Windows). Saves are in `saves/`, in the same folder |
@@ -518,14 +575,80 @@ git cherry-pick <commit-hash>
 ## 10. New game quick checklist
 
 - [ ] **Use this template** → clone → open in Godot 4.7 → **F5** works
-- [ ] `tools/setup_genre.gd` with the genre → **File → Run** → **Reload Current Project**
+- [ ] **Project → Tools → Configurar novo jogo…** (name, genre, platforms, docs) → **F5** works
 - [ ] Smoke test passes locally
-- [ ] Project name, `GAME_TITLE`, icon, initial version
+- [ ] Icon and initial version (the wizard already set the name and `GAME_TITLE`)
 - [ ] Android `package/unique_name` and `package/name`
-- [ ] `GAME_SLUG` in CI
-- [ ] README with the game's description, plus the game's own badges, `LICENSE`, `CHANGELOG.md` and `CODEOWNERS`
+- [ ] README with the game's description, plus the game's own badges and `LICENSE`
 - [ ] First commit and push → green CI in the Actions tab
 - [ ] GitHub configured: Advanced Security (vulnerabilities + Dependabot), `main` ruleset, description and topics ([Step 6](#step-6-configure-the-repository-on-github-once-per-repository))
 - [ ] (If publishing on Android) release keystore + 3 GitHub secrets
 - [ ] First own level in `ScenePaths.FIRST_LEVEL`
 - [ ] First `v0.1.0` tag → Release with the builds
+
+---
+
+## 11. Full recipe: a game from start to first build
+
+An example of the most efficient way to use the template, from an empty repository to the first build. The example game is **"Cat Adventure"**, a small metroidvania for PC and mobile, made with the help of Claude Code.
+
+### Stage 1: create and configure (about 15 min)
+
+1. On GitHub, in the template repository: **Use this template → Create a new repository** → `cat-adventure`.
+2. Clone it and open it in Godot 4.7 (**Import**). Wait for the import and press **F5** to see that everything works.
+3. **Project → Tools → Configurar novo jogo…** and answer:
+   - Name: `Cat Adventure`
+   - Type: *side-scrolling / metroidvania*
+   - Platforms: **PC** and **Mobile** (no Web)
+   - Documentation: **game**, no English docs, no community files
+   - At the end: remove the setup tools
+4. The editor restarts. Press **F5** again and run the tests:
+   ```bash
+   godot --headless --path . res://tests/smoke_test.tscn
+   ```
+5. Commit and push, then check the green CI in the **Actions** tab:
+   ```bash
+   git add -A && git commit -m "Set up the game from the template" && git push
+   ```
+
+### Stage 2: give Claude Code your game's context (about 10 min)
+
+Open `CLAUDE.md` and add a short section about **your** game, right after *Project*. Example:
+
+```markdown
+## The game
+
+- Short metroidvania (~1 h), 1 map with 12 rooms. Character: a cat that unlocks abilities.
+- Planned abilities, in order: dash (starting), double jump, wall jump, heavy scratch.
+- Out of scope: multiplayer, shop, branching dialogue.
+```
+
+It's only a few lines, but it keeps the AI from inventing out-of-scope features or asking about things already decided.
+
+### Stage 3: vertical slice, one task at a time
+
+Build **one complete room** before producing content in volume. Ask Claude Code for one thing at a time, always pointing to the manual's recipe and asking for a test. Examples of requests that work well:
+
+1. "Replace the player's visuals with the sprite in `assets/sprites/cat/`, following section 5.1 of the MANUAL."
+2. "Create the wall jump ability following section 5.5 of the MANUAL, with a pickup in the level and a test in the platformer suite. Run the smoke test at the end."
+3. "Create a bat enemy that flies toward the player, extending `Enemy` (section 5.4 of the MANUAL), with its own `EnemyStats` and a test."
+4. "Create the `room_01` level with a door that only opens with wall jump, as suggested in IMPROVEMENTS."
+
+After each task: play a bit (**F5**), tune the numbers in the Inspector (in the `.tres` files, without asking the AI) and make a small commit.
+
+### Stage 4: first build
+
+1. Replace the icon (`icon.svg`) and, for Android, set `package/unique_name` ([section 4](#4-initial-changes-your-games-identity)).
+2. Create the tag:
+   ```bash
+   git tag v0.1.0 && git push --tags
+   ```
+3. CI builds for PC and Android and publishes a **Release** on GitHub. Send it to friends to test.
+
+### Why this order saves time and tokens
+
+- **The wizard comes first:** the project starts with only what the game uses, so every Claude Code session reads less.
+- **The game's context lives in `CLAUDE.md`,** instead of being repeated in every conversation.
+- **Requests that point to a MANUAL section** give a ready-made path: the AI doesn't need to explore the project to figure out how.
+- **A test with every request:** errors show up right away, not three features later, when they cost much more to find.
+- **Fine-tune in the Inspector, not by prompt:** changing `jump_height` in the `.tres` costs zero tokens.

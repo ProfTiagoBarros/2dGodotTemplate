@@ -18,6 +18,7 @@ Guia prático para começar um jogo novo a partir do template, fazer as modifica
 8. [Sugestões para aproveitar melhor](#8-sugestões-para-aproveitar-melhor)
 9. [Solução de problemas](#9-solução-de-problemas)
 10. [Checklist rápido de jogo novo](#10-checklist-rápido-de-jogo-novo)
+11. [Receita completa: um jogo do início ao primeiro build](#11-receita-completa-um-jogo-do-início-ao-primeiro-build)
 
 ---
 
@@ -70,19 +71,37 @@ Se ainda não fez isso: no repositório do template no GitHub, vá em *Settings 
    level topdown_level_01
    ```
 
-### Passo 3: escolher o gênero (uma única vez)
+### Passo 3: configurar o jogo com o assistente (uma única vez)
 
-1. No editor, abra `tools/setup_genre.gd`.
-2. Mude a linha `const GENRE := "platformer"` para o gênero desejado (`"platformer"` ou `"topdown"`).
-3. Com o script aberto, use **File → Run** (Ctrl+Shift+X).
-4. Use **Project → Reload Current Project**.
+O template traz um **assistente que faz perguntas sobre o seu jogo** e deixa o projeto no formato certo, removendo o que não será usado. Menos código para manter, e menos contexto para o Claude Code ler a cada sessão.
 
-O que o setup faz:
-- Aponta a primeira fase do jogo para o gênero escolhido.
-- Move a pasta do **outro** gênero para a **lixeira do sistema**, de onde dá para recuperar.
-- Remove do mapa de controles as ações que só o outro gênero usava, como o pulo no top-down ou a mira no platformer.
+1. No editor: **Project → Tools → Configurar novo jogo…**
+2. Responda as perguntas:
 
-> Dica: rode **F5** de novo depois do setup para confirmar que está tudo certo. A pasta `tools/` pode ser apagada depois.
+   | Pergunta | O que muda |
+   |---|---|
+   | **Nome do jogo** | Nome do projeto (e da pasta de saves), título no menu (`GAME_TITLE`) e nome dos arquivos de build no CI (`GAME_SLUG`) |
+   | **Tipo de jogo** | *Platformer* ou *top-down* mantêm só aquele módulo. *Só a base* (puzzle, cartas, narrativo…) apaga os dois e cria uma fase vazia em `game/levels/level_01.tscn`, mantendo menus, save, controles, debug e CI |
+   | **Plataformas** | PC, Web e/ou Android. As que ficarem de fora saem do `export_presets.cfg` e do CI |
+   | **Documentação** | Transforma as docs do template em docs do jogo: `README.md` novo, o README do template vira `TEMPLATE.md`, `CHANGELOG.md` zerado e `CLAUDE.md` enxuto (sem as regras de manutenção do template e sem os trechos do gênero removido). Opcionalmente mantém as docs em inglês e os arquivos de comunidade (CONTRIBUTING, modelos de issue/PR) |
+   | **Ao final** | Remove as ferramentas de setup (`tools/` e o próprio assistente), que não têm mais uso |
+
+3. A janela mostra **o que vai acontecer** antes de você confirmar. Ao clicar em **Configurar**, o editor reinicia sozinho.
+4. Aperte **F5** para conferir.
+
+Tudo o que é removido vai para a **lixeira do sistema**. Como o repositório acabou de ser criado (Passo 1), dá para desfazer tudo com:
+
+```bash
+git checkout -- . && git clean -fd
+```
+
+**Pela linha de comando** (automação, ou se preferir o terminal), as mesmas perguntas viram parâmetros. Use `--dry-run` para só ver o plano:
+
+```bash
+godot --headless --path . -s res://tools/setup_project_cli.gd -- --name="Aventura do Gato" --genre=platformer --platforms=pc,mobile --dry-run
+```
+
+> O assistente pergunta por uma janela porque, no Windows, o Godot é um app gráfico e não mostra perguntas no terminal. Ainda existe o setup só de gênero (`tools/setup_genre.gd`, **File → Run**), mas o assistente faz isso e mais.
 
 ### Passo 4: rodar os testes
 
@@ -147,22 +166,22 @@ Documentação: [rulesets](https://docs.github.com/en/repositories/configuring-b
 
 ## 4. Modificações iniciais: a identidade do jogo
 
-Faça isto logo no começo, porque alguns desses valores são difíceis de mudar depois que o jogo é publicado.
+Faça isto logo no começo, porque alguns desses valores são difíceis de mudar depois que o jogo é publicado. O assistente do [Passo 3](#passo-3-configurar-o-jogo-com-o-assistente-uma-única-vez) já cuida dos itens marcados com ✔.
 
 | O quê | Onde | Observação |
 |---|---|---|
-| **Nome do projeto** | *Project Settings → Application → Config → Name* | Também muda a pasta de saves/configurações do usuário |
-| **Título no menu** | `localization/translations.csv`, chave `GAME_TITLE` | Um texto por idioma (`en`, `pt_BR`) |
+| ✔ **Nome do projeto** | *Project Settings → Application → Config → Name* | Também muda a pasta de saves/configurações do usuário |
+| ✔ **Título no menu** | `localization/translations.csv`, chave `GAME_TITLE` | Um texto por idioma (`en`, `pt_BR`) |
 | **Versão inicial** | *Project Settings → Application → Config → Version* | Depois o CI preenche a partir das tags (`v1.0.0`) |
 | **Ícone** | Substitua `icon.svg` | Para Android, configure também os ícones adaptativos no preset |
 | **ID do app Android** | `export_presets.cfg` → `package/unique_name` | Formato `com.seuestudio.seujogo`. **Não mude depois de publicar** na Play Store |
 | **Nome do app Android** | `export_presets.cfg` → `package/name` | Nome que aparece no celular |
-| **Nome dos arquivos de build** | `.github/workflows/ci.yml` → `GAME_SLUG` | Ex.: `meu-metroidvania` |
-| **README do jogo** | `README.md` | Troque a descrição do topo pela do seu jogo. Mantenha `MANUAL.md` e `CLAUDE.md` como referência |
+| ✔ **Nome dos arquivos de build** | `.github/workflows/ci.yml` → `GAME_SLUG` | Ex.: `meu-metroidvania` |
+| ✔ **README do jogo** | `README.md` | O assistente cria um README do jogo e guarda o do template como `TEMPLATE.md`. Complete com a descrição, imagens e badges do seu jogo |
 | **Badges e links** | Topo de `README.md` e `README.en.md` | Troque `ProfTiagoBarros/2dGodotTemplate` pelo seu repositório (badge do CI) |
 | **Licença do jogo** | `LICENSE` | O template é MIT. Seu jogo pode ter outra licença (ou nenhuma, se for fechado); mantenha o aviso de copyright do template num arquivo de licenças de terceiros ou nos créditos |
-| **Histórico** | `CHANGELOG.md` | Comece um histórico novo para o jogo, apagando as entradas do template |
-| **Revisor de PRs** | `.github/CODEOWNERS` | Troque `@ProfTiagoBarros` pelo seu usuário ou equipe |
+| ✔ **Histórico** | `CHANGELOG.md` | O assistente começa um histórico novo para o jogo |
+| **Revisor de PRs** | `.github/CODEOWNERS` | Troque `@ProfTiagoBarros` pelo seu usuário ou equipe (o assistente remove o arquivo se você não mantiver os arquivos de comunidade) |
 | **Resolução base** | *Project Settings → Display → Window* | Padrão 640×360 (pixel art). Para arte HD use 1280×720 e mude o filtro de textura para *Linear* |
 | **Orientação no celular** | *Project Settings → Display → Window → Handheld* | Padrão paisagem. Para jogos em pé, use `sensor_portrait` e ajuste a resolução base |
 
@@ -474,6 +493,44 @@ O `CLAUDE.md` explica a arquitetura, os comandos de teste e as armadilhas conhec
 
 Peça sempre para **rodar o smoke test** no fim. É a garantia de que nada quebrou.
 
+Para gastar **menos tokens e menos tempo**:
+
+- **Rode o assistente do Passo 3 antes de tudo.** Cada módulo, doc ou regra que sobra no projeto é contexto que a IA pode ler sem necessidade.
+- **Mantenha o `CLAUDE.md` com a cara do seu jogo:** acrescente o que é específico (personagens, sistemas próprios, decisões tomadas) e tire o que não vale mais. Ele é lido no começo de toda sessão.
+- **Peça tarefas pequenas e específicas, apontando a receita:** "adicione wall jump seguindo a seção 5.5 do MANUAL" custa bem menos que "melhore o jogo".
+- **Uma tarefa por sessão** quando forem coisas sem relação. Uma conversa longa acumula contexto que deixa cada resposta mais cara.
+- **Apague exemplos que não vai usar** (inimigos, fases, alvo de treino), ajustando os testes que dependiam deles.
+
+### Template ou começar do zero?
+
+Usar o template economiza tempo e tokens **quando o jogo precisa do que ele traz**. A parte cara de um jogo não é o personagem andando; é a infraestrutura: save seguro e versionado, configurações, remapeamento de controles, menus, pausa, toque no celular, CI com builds e ferramentas de debug. Ela já está pronta, testada e com vários defeitos reais corrigidos. Além disso, o `CLAUDE.md` e os testes fazem a IA acertar mais e refazer menos.
+
+O template também tem custos: regras e docs que você não vai usar (o assistente remove a maior parte), um smoke test de cerca de 1 minuto, e uma arquitetura pensada para jogos de ação, que vira peso morto em outros gêneros.
+
+| Tipo de jogo | Melhor caminho |
+|---|---|
+| Platformer, metroidvania, top-down de ação | **Use o template** com o gênero correspondente. É o caso para o qual ele foi feito |
+| Outro gênero 2D que precisa de menus, save e controles (puzzle, cartas, narrativo) | Use o template com a opção **só a base** |
+| Protótipo descartável de game jam (poucas horas) | Começar do zero pode ser mais rápido |
+| Jogo pequeno sem save, sem menus e sem controles configuráveis | Do zero |
+
+### E jogos 3D?
+
+Este template é **2D**, mas boa parte dele não depende de dimensão: autoloads (Log, Settings, SaveSystem, AudioManager, SceneLoader, InputManager/InputBindings, DebugTools), `PauseController`, `SafeConfig`, menus e UI, tradução, a `StateMachine`, os testes, o CI e as regras do `CLAUDE.md` e do [REVIEW_GUIDE.md](REVIEW_GUIDE.md). Recriar isso em cada jogo 3D seria desperdício.
+
+Já um template 3D **completo**, feito antes do jogo, costuma render pouco:
+
+- **O que muda no 3D é justamente o mais difícil de generalizar:** câmera (terceira pessoa com colisão, primeira pessoa, isométrica), movimento em `CharacterBody3D`, animação (AnimationTree, blend spaces, root motion), iluminação, LOD e desempenho no celular.
+- **Gêneros 3D variam muito mais** entre si (FPS, ação em terceira pessoa, corrida, puzzle) do que platformer e top-down.
+- **O gargalo do 3D costuma ser arte e assets**, não código, e nenhum template resolve isso.
+- **A IA trabalha pior em 3D:** ela não "enxerga" a cena, então ajustar câmera e colisão exige mais rodadas com você testando. Cenas 3D também são arquivos maiores, que custam mais tokens para ler.
+
+**Recomendação:**
+
+1. Para fazer jogos 2D **e** 3D, separe a parte comum deste template num "template base" (item no [IMPROVEMENTS.md](IMPROVEMENTS.md)).
+2. No primeiro jogo 3D, parta dessa base e use addons prontos para o que é difícil (ex.: **Phantom Camera** para câmeras). Veja também templates da comunidade, como o **COGITO** (primeira pessoa), e os demos oficiais do Godot.
+3. Só depois de 1 ou 2 jogos 3D do mesmo tipo extraia um módulo de gênero 3D, como foi feito aqui com platformer e top-down. Template bom nasce de jogos reais, não o contrário.
+
 ### Mantendo o template e os jogos atualizados
 
 Melhorou algo genérico num jogo, como um componente novo em `core/`? Leve para o template, para os próximos jogos já nascerem com isso. O caminho inverso também funciona: para trazer uma melhoria do template para um jogo em andamento:
@@ -503,7 +560,7 @@ git cherry-pick <hash-do-commit>
 | Problema | Solução |
 |---|---|
 | Erros de "Failed loading resource" ao abrir pela primeira vez ou depois de mover arquivos | Use *Project → Reload Current Project*. Se persistir, feche o Godot, apague a pasta `.godot/` e abra de novo (ela é regenerada) |
-| Rodei o setup com o gênero errado | Se o projeto já estava commitado, `git checkout -- .` desfaz tudo (inclusive restaura a pasta apagada). Sem commit, restaure a pasta da **lixeira do sistema** e desfaça a mudança em `scene_paths.gd`. Depois, rode o setup de novo |
+| Rodei o assistente (ou o setup) com a opção errada | Se o projeto já estava commitado, `git checkout -- . && git clean -fd` desfaz tudo: restaura o que foi apagado e remove os arquivos criados (cuidado: o `clean` também apaga arquivos seus que nunca foram commitados). Sem commit, restaure os arquivos da **lixeira do sistema**. Depois, rode de novo |
 | Controles de toque não aparecem no PC | Em *Configurações → Controles de Toque*, escolha **Sempre**. Para simular toque com o mouse, ative *Project Settings → Input Devices → Pointing → Emulate Touch From Mouse* |
 | Tocar na tela do celular dispara uma ação de mouse | O evento de mouse da ação precisa ter `"device":32` (mouse real) no `project.godot`, como em `attack` |
 | Configurações ou atalhos "estranhos" | Apague `settings.cfg` em `%APPDATA%\Godot\app_userdata\<Nome do Projeto>\` (Windows). Os saves ficam em `saves/`, na mesma pasta |
@@ -518,14 +575,80 @@ git cherry-pick <hash-do-commit>
 ## 10. Checklist rápido de jogo novo
 
 - [ ] **Use this template** → clonar → abrir no Godot 4.7 → **F5** funciona
-- [ ] `tools/setup_genre.gd` com o gênero → **File → Run** → **Reload Current Project**
+- [ ] **Project → Tools → Configurar novo jogo…** (nome, gênero, plataformas, docs) → **F5** funciona
 - [ ] Smoke test passa localmente
-- [ ] Nome do projeto, `GAME_TITLE`, ícone, versão inicial
+- [ ] Ícone e versão inicial (nome e `GAME_TITLE` o assistente já ajustou)
 - [ ] `package/unique_name` e `package/name` do Android
-- [ ] `GAME_SLUG` no CI
-- [ ] README com a descrição do jogo, badges, `LICENSE`, `CHANGELOG.md` e `CODEOWNERS` do jogo
+- [ ] README com a descrição do jogo, badges e `LICENSE` do jogo
 - [ ] Primeiro commit e push → CI verde na aba Actions
 - [ ] GitHub configurado: Advanced Security (vulnerabilidades + Dependabot), ruleset da `main`, descrição e tópicos ([Passo 6](#passo-6-configurar-o-repositório-no-github-uma-vez-por-repositório))
 - [ ] (Se for publicar no Android) keystore de release + 3 secrets no GitHub
 - [ ] Primeira fase própria em `ScenePaths.FIRST_LEVEL`
 - [ ] Primeira tag `v0.1.0` → Release com os builds
+
+---
+
+## 11. Receita completa: um jogo do início ao primeiro build
+
+Um exemplo de como usar o template da forma mais eficiente, do repositório vazio ao primeiro build. O jogo de exemplo é **"Aventura do Gato"**, um metroidvania pequeno para PC e celular, feito com a ajuda do Claude Code.
+
+### Etapa 1: criar e configurar (cerca de 15 min)
+
+1. No GitHub, no repositório do template: **Use this template → Create a new repository** → `aventura-do-gato`.
+2. Clone e abra no Godot 4.7 (**Import**). Espere a importação e aperte **F5** para ver que tudo funciona.
+3. **Project → Tools → Configurar novo jogo…** e responda:
+   - Nome: `Aventura do Gato`
+   - Tipo: *side-scrolling / metroidvania*
+   - Plataformas: **PC** e **Celular** (sem Web)
+   - Documentação: **jogo**, sem docs em inglês, sem arquivos de comunidade
+   - Ao final: remover as ferramentas de setup
+4. O editor reinicia. Aperte **F5** de novo e rode os testes:
+   ```bash
+   godot --headless --path . res://tests/smoke_test.tscn
+   ```
+5. Commit e push, e confira o CI verde na aba **Actions**:
+   ```bash
+   git add -A && git commit -m "Configura o jogo a partir do template" && git push
+   ```
+
+### Etapa 2: dar ao Claude Code o contexto do seu jogo (cerca de 10 min)
+
+Abra o `CLAUDE.md` e acrescente uma seção curta sobre o **seu** jogo, logo depois de *Project*. Exemplo:
+
+```markdown
+## O jogo
+
+- Metroidvania curto (~1 h), 1 mapa com 12 salas. Personagem: um gato que destrava habilidades.
+- Habilidades planejadas, em ordem: dash (inicial), pulo duplo, wall jump, arranhão forte.
+- Fora de escopo: multiplayer, loja, diálogos ramificados.
+```
+
+São poucas linhas, mas evitam que a IA invente coisas fora do escopo ou pergunte o que já foi decidido.
+
+### Etapa 3: fatia vertical, uma tarefa por vez
+
+Construa **uma sala completa** antes de produzir conteúdo em quantidade. Peça ao Claude Code uma coisa por vez, sempre apontando a receita do manual e pedindo o teste. Exemplos de pedidos que funcionam bem:
+
+1. "Troque o visual do player pelo sprite em `assets/sprites/gato/`, seguindo a seção 5.1 do MANUAL."
+2. "Crie a habilidade wall jump seguindo a seção 5.5 do MANUAL, com pickup na fase e teste na suíte do platformer. Rode o smoke test no fim."
+3. "Crie um inimigo morcego que voa em direção ao player, estendendo `Enemy` (seção 5.4 do MANUAL), com `EnemyStats` próprio e teste."
+4. "Crie a fase `sala_01` com uma porta que só abre com wall jump, como sugerido no IMPROVEMENTS."
+
+Depois de cada tarefa: jogue um pouco (**F5**), ajuste os números no Inspector (nos `.tres`, sem pedir à IA) e faça um commit pequeno.
+
+### Etapa 4: primeiro build
+
+1. Troque o ícone (`icon.svg`) e, para Android, ajuste `package/unique_name` ([seção 4](#4-modificações-iniciais-a-identidade-do-jogo)).
+2. Crie a tag:
+   ```bash
+   git tag v0.1.0 && git push --tags
+   ```
+3. O CI gera os builds de PC e Android e publica um **Release** no GitHub. Mande para amigos testarem.
+
+### Por que esta ordem economiza tempo e tokens
+
+- **O assistente vem primeiro:** o projeto já começa só com o que o jogo usa, então cada sessão do Claude Code lê menos.
+- **O contexto do jogo fica no `CLAUDE.md`,** em vez de ser repetido em cada conversa.
+- **Pedidos que apontam uma seção do MANUAL** dão um caminho pronto: a IA não precisa explorar o projeto para descobrir como fazer.
+- **Teste em todo pedido:** os erros aparecem na hora, e não três features depois, quando custam muito mais para achar.
+- **Ajuste fino no Inspector, não por prompt:** mudar `jump_height` no `.tres` custa zero tokens.

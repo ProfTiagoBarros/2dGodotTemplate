@@ -9,6 +9,9 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), 
 
 ### Adicionado
 
+- Assistente de novo jogo: **Project → Tools → Configurar novo jogo…** pergunta nome, tipo de jogo (platformer, top-down ou só a base), plataformas e como tratar as docs, e configura o projeto (módulos, presets de exportação, CI, título, README/CHANGELOG do jogo e `CLAUDE.md` enxuto). Também disponível por linha de comando (`tools/setup_project_cli.gd`, com `--dry-run`).
+- Opção **só a base** no setup de gênero: remove os módulos e cria uma fase vazia, para jogos de outros gêneros.
+- MANUAL: quando vale usar o template ou começar do zero, o caso dos jogos 3D, dicas para gastar menos tokens com o Claude Code e uma receita completa de exemplo (do repositório vazio ao primeiro build).
 - `REVIEW_GUIDE.md` (PT/EN): guia de revisão de código e arquitetura, com princípios, boas práticas do Godot, padrões de projeto para jogos e checklist de PR.
 - `PauseController` (`core/utils/`): pausa coordenada por motivos (menu, console…). O jogo só despausa quando nenhum sistema pede pausa.
 
@@ -23,6 +26,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), 
 
 ### Corrigido
 
+- A HUD mostrava a barra de vida mesmo sem player na fase; agora ela aparece quando um player anuncia a vida.
 - `HurtboxComponent` gerava erro do engine ("Can't find overlapping areas when monitoring is off") no frame em que um inimigo morria.
 
 Encontrados na revisão de arquitetura; todos reproduzidos antes da correção e cobertos por teste:

@@ -48,3 +48,4 @@ ABILITY_ATTACK,Attack,Ataque
 ABILITY_DASH,Dash,Dash
 ABILITY_DOUBLE_JUMP,Double Jump,Pulo duplo
 UI_HITSTOP,Hit Stop,Pausa de Impacto
+LEVEL_PLACEHOLDER,Empty level: build your game in game/levels/level_01.tscn,Fase vazia: monte seu jogo em game/levels/level_01.tscn

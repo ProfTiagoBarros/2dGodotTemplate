@@ -19,18 +19,18 @@ Template base para jogos **2D** em **Godot 4.7+**, pensado para **PC e celular**
 
 1. Crie o projeto a partir do template (GitHub: **Use this template**, ou copie a pasta).
 2. Abra no Godot 4.7+ (Project Manager → Import).
-3. **Escolha o gênero** (uma única vez):
-   - **No editor:** abra `tools/setup_genre.gd`, ajuste `const GENRE := "platformer"` ou `"topdown"` e rode com **File → Run** (Ctrl+Shift+X). Depois use *Project → Reload Current Project*.
-   - **Pela linha de comando:**
-     ```bash
-     godot --headless --path . -s res://tools/setup_genre_cli.gd -- topdown
-     ```
+3. **Configure o jogo com o assistente** (uma única vez): **Project → Tools → Configurar novo jogo…**. Ele pergunta o nome, o tipo de jogo (platformer, top-down ou só a base), as plataformas (PC, Web, Android) e como tratar as docs, mostra o que vai mudar e então:
+   - mantém só o módulo de gênero escolhido (os outros vão para a **lixeira**) e remove as ações de controle que só eles usavam;
+   - ajusta nome do projeto, título do menu (`GAME_TITLE`) e `GAME_SLUG` do CI;
+   - remove do `export_presets.cfg` e do CI as plataformas que você não vai usar;
+   - transforma as docs do template em docs do jogo (README novo, `TEMPLATE.md`, CHANGELOG zerado) e enxuga o `CLAUDE.md`, para o Claude Code ler menos contexto a cada sessão.
 
-   O setup aponta `ScenePaths.FIRST_LEVEL` para a fase do gênero, move o módulo do outro gênero para a **lixeira** (dá para recuperar) e remove do InputMap as ações que só o outro gênero usava.
-4. **Identidade do jogo:**
-   - Nome: *Project Settings → Application → Config → Name*.
-   - Android: `package/unique_name` (ex.: `com.seuestudio.seujogo`) e `package/name` em `export_presets.cfg` (ou *Project → Export → Android*).
-   - CI: `GAME_SLUG` em `.github/workflows/ci.yml`, usado no nome dos arquivos gerados.
+   Pela linha de comando (automação), com `--dry-run` para só ver o plano:
+   ```bash
+   godot --headless --path . -s res://tools/setup_project_cli.gd -- --name="Meu Jogo" --genre=topdown --platforms=pc,mobile --dry-run
+   ```
+   Detalhes e exemplo completo no [MANUAL](MANUAL.md#passo-3-configurar-o-jogo-com-o-assistente-uma-única-vez).
+4. **Identidade do jogo:** ícone e, para Android, `package/unique_name` (ex.: `com.seuestudio.seujogo`) e `package/name` em `export_presets.cfg` (ou *Project → Export → Android*).
 5. Pressione **F5**. A partir daí, cada push roda o smoke test no GitHub e cada tag `v*` gera os builds (veja [CI, builds e releases](#ci-builds-e-releases)).
 
 > Antes do setup os dois módulos convivem. Para testar o outro gênero, troque `FIRST_LEVEL` em `core/constants/scene_paths.gd`.
@@ -81,7 +81,7 @@ A versão da tag (`1.2.0`) é gravada em `config/version`, que aparece no canto 
 
 **Detalhes:**
 - O Godot e os export templates (~1,3 GB) são baixados uma vez e ficam em **cache**. A versão é definida por `GODOT_VERSION` no workflow; mantenha igual à do editor.
-- `tests/`, `tools/` e `game/*/tests/` são **excluídos** dos builds pelos presets.
+- `tests/`, `tools/`, `addons/project_wizard/` e `game/*/tests/` são **excluídos** dos builds pelos presets.
 - **Web** usa a variante **sem threads**, compatível com itch.io e com qualquer hospedagem estática, sem headers COOP/COEP.
 - **Android sem configurar nada:** o APK sai assinado com uma keystore de **debug** gerada no CI. Dá para instalar e testar, mas não para publicar na Play Store.
 - **Android de release:** adicione 3 *secrets* no repositório (*Settings → Secrets and variables → Actions*). Com eles, o CI exporta em modo release automaticamente.
@@ -136,7 +136,8 @@ ui/            main_menu/ pause_menu/ settings_menu/ controls_menu/ hud/ touch_c
 localization/  translations.csv (en, pt_BR)
 assets/        Assets compartilhados (sprites, audio, fonts, shaders)
 tests/         Runner do smoke test
-tools/         Setup de gênero (rode uma vez e pode apagar)
+tools/         Assistente de novo jogo e setup de gênero (o assistente remove ao final)
+addons/        project_wizard: janela do assistente (Project → Tools)
 ```
 
 **Por que por feature?** A documentação do Godot recomenda manter os assets perto das cenas que os usam. Assim cada feature (e cada gênero) é uma pasta autocontida, fácil de mover, apagar ou reaproveitar.
@@ -358,7 +359,7 @@ Arquivos em `user://` (configurações, saves) podem ser editados pelo jogador o
 - **Novo tipo de inimigo**: duplique `platformer_enemy.tscn` (ou `topdown_enemy.tscn`), troque o visual e crie um `EnemyStats` (.tres) com os números dele. Para outro comportamento de movimento, estenda `Enemy` e implemente os métodos abstratos `patrol_direction`/`direction_to_target`/`move_toward_direction`.
 - **Nova opção de configuração**: adicione o padrão em `Settings.DEFAULTS`, trate em `Settings._apply` e crie o controle em `settings_menu`.
 - **Novo texto**: adicione uma linha em `translations.csv` e use a chave no `text` do Control.
-- **Novo módulo de gênero** (ex.: twin-stick, puzzle): crie `game/<genero>/` com fase, player e `tests/<genero>_smoke_test.gd`, e registre em `tools/genre_setup.gd` (`GENRES`) e em `tests/smoke_test.gd` (`GENRE_SUITES`).
+- **Novo módulo de gênero** (ex.: twin-stick, puzzle): crie `game/<genero>/` com fase, player e `tests/<genero>_smoke_test.gd`, e registre em `tools/genre_setup.gd` (`GENRES`), em `tools/project_setup.gd` (`GENRE_LABELS`) e em `tests/smoke_test.gd` (`GENRE_SUITES`). Trechos do `CLAUDE.md` só do gênero novo vão entre marcadores `genre:<nome>`.
 
 ## Contribuindo
 

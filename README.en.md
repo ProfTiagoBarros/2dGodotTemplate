@@ -19,18 +19,18 @@ Starter template for **2D** games in **Godot 4.7+**, built for **PC and mobile**
 
 1. Create the project from the template (GitHub: **Use this template**, or copy the folder).
 2. Open it in Godot 4.7+ (Project Manager → Import).
-3. **Pick the genre** (only once):
-   - **In the editor:** open `tools/setup_genre.gd`, set `const GENRE := "platformer"` or `"topdown"` and run it with **File → Run** (Ctrl+Shift+X). Then use *Project → Reload Current Project*.
-   - **From the command line:**
-     ```bash
-     godot --headless --path . -s res://tools/setup_genre_cli.gd -- topdown
-     ```
+3. **Set up the game with the wizard** (only once): **Project → Tools → Configurar novo jogo…** (UI in Portuguese). It asks for the name, the game type (platformer, top-down or base only), the platforms (PC, Web, Android) and how to handle the docs, shows what will change, and then:
+   - keeps only the chosen genre module (the others go to the **trash**) and removes the input actions only they used;
+   - sets the project name, the menu title (`GAME_TITLE`) and the CI `GAME_SLUG`;
+   - removes the platforms you won't use from `export_presets.cfg` and CI;
+   - turns the template docs into game docs (new README, `TEMPLATE.md`, fresh CHANGELOG) and slims down `CLAUDE.md`, so Claude Code reads less context every session.
 
-   The setup points `ScenePaths.FIRST_LEVEL` to the genre's level, moves the other genre's module to the **trash** (recoverable) and removes from the InputMap the actions only the other genre used.
-4. **Game identity:**
-   - Name: *Project Settings → Application → Config → Name*.
-   - Android: `package/unique_name` (e.g. `com.yourstudio.yourgame`) and `package/name` in `export_presets.cfg` (or *Project → Export → Android*).
-   - CI: `GAME_SLUG` in `.github/workflows/ci.yml`, used to name the generated files.
+   From the command line (automation), with `--dry-run` to only see the plan:
+   ```bash
+   godot --headless --path . -s res://tools/setup_project_cli.gd -- --name="My Game" --genre=topdown --platforms=pc,mobile --dry-run
+   ```
+   Details and a full example in the [MANUAL](MANUAL.en.md#step-3-set-up-the-game-with-the-wizard-only-once).
+4. **Game identity:** icon and, for Android, `package/unique_name` (e.g. `com.yourstudio.yourgame`) and `package/name` in `export_presets.cfg` (or *Project → Export → Android*).
 5. Press **F5**. From then on, every push runs the smoke test on GitHub and every `v*` tag produces builds (see [CI, builds and releases](#ci-builds-and-releases)).
 
 > Before the setup, both modules coexist. To try the other genre, change `FIRST_LEVEL` in `core/constants/scene_paths.gd`.
@@ -81,7 +81,7 @@ The tag's version (`1.2.0`) is written to `config/version`, shown in the corner 
 
 **Details:**
 - Godot and the export templates (~1.3 GB) are downloaded once and **cached**. The version is set by `GODOT_VERSION` in the workflow; keep it equal to the editor's.
-- `tests/`, `tools/` and `game/*/tests/` are **excluded** from builds by the presets.
+- `tests/`, `tools/`, `addons/project_wizard/` and `game/*/tests/` are **excluded** from builds by the presets.
 - **Web** uses the **no-threads** variant, compatible with itch.io and any static hosting, without COOP/COEP headers.
 - **Android with no setup:** the APK is signed with a **debug** keystore generated in CI. You can install and test it, but not publish it on the Play Store.
 - **Release Android builds:** add 3 repository *secrets* (*Settings → Secrets and variables → Actions*). With them, CI exports in release mode automatically.
@@ -136,7 +136,8 @@ ui/            main_menu/ pause_menu/ settings_menu/ controls_menu/ hud/ touch_c
 localization/  translations.csv (en, pt_BR)
 assets/        Shared assets (sprites, audio, fonts, shaders)
 tests/         Smoke test runner
-tools/         Genre setup (run once, then you can delete it)
+tools/         New-game wizard and genre setup (the wizard removes them at the end)
+addons/        project_wizard: the wizard window (Project → Tools)
 ```
 
 **Why by feature?** The Godot documentation recommends keeping assets close to the scenes that use them. Each feature (and each genre) becomes a self-contained folder that is easy to move, delete or reuse.
@@ -358,7 +359,7 @@ Files in `user://` (settings, saves) can be edited by the player or shared betwe
 - **New enemy type**: duplicate `platformer_enemy.tscn` (or `topdown_enemy.tscn`), swap the visuals and create an `EnemyStats` (.tres) with its numbers. For different movement, extend `Enemy` and implement the abstract methods `patrol_direction`/`direction_to_target`/`move_toward_direction`.
 - **New setting**: add the default to `Settings.DEFAULTS`, handle it in `Settings._apply` and create the control in `settings_menu`.
 - **New text**: add a line to `translations.csv` and use the key as the Control's `text`.
-- **New genre module** (e.g. twin-stick, puzzle): create `game/<genre>/` with a level, player and `tests/<genre>_smoke_test.gd`, and register it in `tools/genre_setup.gd` (`GENRES`) and `tests/smoke_test.gd` (`GENRE_SUITES`).
+- **New genre module** (e.g. twin-stick, puzzle): create `game/<genre>/` with a level, player and `tests/<genre>_smoke_test.gd`, and register it in `tools/genre_setup.gd` (`GENRES`), `tools/project_setup.gd` (`GENRE_LABELS`) and `tests/smoke_test.gd` (`GENRE_SUITES`). `CLAUDE.md` text that only applies to the new genre goes between `genre:<name>` markers.
 
 ## Contributing
 

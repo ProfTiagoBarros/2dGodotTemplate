@@ -46,6 +46,10 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=4
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/project_wizard/plugin.cfg")
+
 [gui]
 
 theme/custom="res://ui/theme/main_theme.tres"

@@ -30,6 +30,7 @@ mouse_filter = 2
 script = ExtResource("2_safe")
 
 [node name="TopBar" type="HBoxContainer" parent="SafeArea"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 0
 mouse_filter = 2

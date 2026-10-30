@@ -39,9 +39,11 @@ func _ready() -> void:
 	await _test_review_regressions()
 	_test_constants()
 
-	var suites_run := 0
 	for path: String in GENRE_SUITES:
+		# Módulo presente sem a suíte = suíte renomeada/apagada por engano.
+		var module_dir := path.get_base_dir().get_base_dir()
 		if not ResourceLoader.exists(path):
+			check(not DirAccess.dir_exists_absolute(module_dir), "Módulo %s tem suíte de testes" % module_dir)
 			continue
 		print("\n== %s ==" % path.get_file().get_basename())
 		var script := load(path) as GDScript
@@ -52,13 +54,23 @@ func _ready() -> void:
 		var suite: Object = script.new()
 		await suite.call(&"run", self)
 		release_all_actions()
-		suites_run += 1
-	check(suites_run > 0, "Ao menos um módulo de gênero presente")
+	await _test_first_level()
 	SaveSystem.delete_save(TEST_SLOT)
 
 	print("\nSmoke test: %s (%d verificações)" % [
 		"PASSOU" if _failures == 0 else "%d FALHA(S)" % _failures, _checks])
 	get_tree().quit(1 if _failures > 0 else 0)
+
+
+## A fase inicial (qualquer gênero, ou a fase vazia da opção "só a base") abre no Game.
+func _test_first_level() -> void:
+	print("\n== first_level ==")
+	var game := await spawn_game(ScenePaths.FIRST_LEVEL)
+	var levels := 0
+	for node: Node in game.find_children("*", "Node2D", true, false):
+		levels += 1 if node is Level else 0
+	check(levels == 1, "Fase inicial carrega: %s" % ScenePaths.FIRST_LEVEL.get_file())
+	await despawn(game)
 
 
 ## Instancia game.tscn com a fase indicada e espera a física assentar.
@@ -199,7 +211,9 @@ func _test_debug_tools() -> void:
 		await get_tree().process_frame
 	check(DebugTools.is_overlay_visible(), "F3 abre o overlay")
 	var overlay_text := ((DebugTools.get("_overlay") as Node).find_child("StatsLabel") as Label).text
-	check("FPS" in overlay_text and "Vida:" in overlay_text and "Estado:" in overlay_text,
+	# Sem player (opção "só a base"), os watches de gameplay ficam vazios e somem.
+	var player := get_tree().get_first_node_in_group(Groups.PLAYER) as PlayerCharacter
+	check("FPS" in overlay_text and (player == null or ("Vida:" in overlay_text and "Estado:" in overlay_text)),
 			"Overlay mostra métricas e watches do jogo")
 	DebugTools.toggle_overlay()
 
@@ -213,15 +227,17 @@ func _test_debug_tools() -> void:
 	DebugTools.close_console()
 	check(not get_tree().paused, "Fechar o console despausa")
 
-	# Comandos de gameplay (genéricos entre gêneros).
-	var health := get_tree().get_first_node_in_group(Groups.PLAYER).get(&"health") as HealthComponent
-	DebugTools.execute("god")
-	check(health.god_mode and not health.take_damage(1), "god: player não leva dano")
-	DebugTools.execute("god")
-	check(not health.god_mode, "god de novo desliga")
-	DebugTools.execute("tp 123 45")
-	var player := get_tree().get_first_node_in_group(Groups.PLAYER) as Node2D
-	check(player.global_position.is_equal_approx(Vector2(123, 45)), "tp teleporta o player")
+	# Comandos de gameplay (genéricos entre gêneros). Na opção "só a base" do
+	# assistente de projeto não há player: os comandos devem avisar, não quebrar.
+	if player == null:
+		check("Nenhum player" in DebugTools.execute("god"), "god sem player avisa em vez de quebrar")
+	else:
+		DebugTools.execute("god")
+		check(player.health.god_mode and not player.health.take_damage(1), "god: player não leva dano")
+		DebugTools.execute("god")
+		check(not player.health.god_mode, "god de novo desliga")
+		DebugTools.execute("tp 123 45")
+		check(player.global_position.is_equal_approx(Vector2(123, 45)), "tp teleporta o player")
 	check(ScenePaths.FIRST_LEVEL.get_file().get_basename() in DebugTools.execute("level"), "level lista as fases")
 	check("não encontrada" in DebugTools.execute("level fase_inexistente"), "level avisa fase inexistente")
 	await despawn(game)
@@ -394,8 +410,7 @@ func _test_review_regressions() -> void:
 ## Actions/Groups são a única fonte dos nomes: garante que não divergem do
 ## InputMap nem das listas que dependem deles.
 func _test_constants() -> void:
-	print("
-== constants ==")
+	print("\n== constants ==")
 	var undeclared: Array[StringName] = []
 	for action: StringName in InputMap.get_actions():
 		if not String(action).begins_with("ui_") and action not in Actions.ALL:

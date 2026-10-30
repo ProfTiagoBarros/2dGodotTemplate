@@ -9,6 +9,9 @@ const TOAST_DURATION := 2.5
 var _toast_tween: Tween
 var _health_tween: Tween
 
+## Barra de vida: escondida até um player anunciar a vida (jogos sem player
+## não mostram uma barra que nunca muda).
+@onready var _top_bar: Control = %TopBar
 @onready var _health_bar: ProgressBar = %HealthBar
 @onready var _hints: VBoxContainer = %Hints
 @onready var _toast: Label = %Toast
@@ -16,6 +19,7 @@ var _health_tween: Tween
 
 func _ready() -> void:
 	_toast.hide()
+	_top_bar.hide()
 	EventBus.player_health_changed.connect(_on_player_health_changed)
 	EventBus.toast_requested.connect(show_toast)
 	EventBus.ability_unlocked.connect(_on_ability_unlocked)
@@ -59,6 +63,7 @@ func _on_ability_unlocked(ability: StringName) -> void:
 
 
 func _on_player_health_changed(current: int, max_health: int) -> void:
+	_top_bar.show()
 	_health_bar.max_value = max_health
 	# Um tween por vez: danos seguidos não podem animar a barra em "cabo de guerra".
 	if _health_tween != null:

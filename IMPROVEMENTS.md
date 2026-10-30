@@ -32,6 +32,8 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 
 ## 4. Gameplay e arquitetura
 
+- [ ] **Template base 2D/3D**: separar a parte que não depende de dimensão (autoloads, `PauseController`, `SafeConfig`, `StateMachine`, menus/UI, tradução, testes e CI) num template base, do qual este template 2D e um futuro 3D partiriam. Um módulo de gênero 3D só depois de 1 ou 2 jogos 3D reais (veja "E jogos 3D?" no MANUAL).
+
 **Recomendações da revisão de arquitetura** (não aplicadas porque mudam APIs ou a estrutura das cenas):
 
 - [x] ~~Base comum dos players~~: implementada como hierarquia rasa com classes `@abstract` (`game/characters/`): `Character` → `PlayerCharacter` → players, e `Character` → `Enemy` → inimigos. O ciclo de dano/golpe/morte existe uma vez só.
