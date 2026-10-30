@@ -9,6 +9,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), 
 
 ### Adicionado
 
+- Skin de interface **Template Chronicles** (cyberpunk com toque de fantasia): o tema global monta botões, painéis, barras, sliders e chaves a partir dos PNGs de `assets/ui/`, então trocar os arquivos muda o visual de todas as telas. Inclui fundo do menu e emblema gerados no Canva, título com contorno neon, painel no menu de pausa e o gerador `tools/generate_ui_skin.gd`. O título do menu passa a ser "Template Chronicles".
 - Assistente de novo jogo: **Project → Tools → Configurar novo jogo…** pergunta nome, tipo de jogo (platformer, top-down ou só a base), plataformas e como tratar as docs, e configura o projeto (módulos, presets de exportação, CI, título, README/CHANGELOG do jogo e `CLAUDE.md` enxuto). Também disponível por linha de comando (`tools/setup_project_cli.gd`, com `--dry-run`).
 - Opção **só a base** no setup de gênero: remove os módulos e cria uma fase vazia, para jogos de outros gêneros.
 - MANUAL: quando vale usar o template ou começar do zero, o caso dos jogos 3D, dicas para gastar menos tokens com o Claude Code e uma receita completa de exemplo (do repositório vazio ao primeiro build).

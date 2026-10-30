@@ -15,6 +15,12 @@ const GENRE_SUITES: Array[String] = [
 ]
 
 const TEST_SLOT := 98
+## Peças da skin de interface (veja assets/ui/README.md).
+const UI_SKIN_FILES: Array[String] = [
+	"menu_background.png", "emblem.png", "panel.png", "button.png", "button_hover.png",
+	"button_pressed.png", "button_focus.png", "bar_frame.png", "bar_fill.png",
+	"slider_track.png", "slider_fill.png", "slider_grabber.png", "toggle_on.png", "toggle_off.png",
+]
 
 ## Nomes das cenas de efeito (OneShotEffect) criadas desde o último clear().
 var spawned_effects: Array[String] = []
@@ -38,6 +44,7 @@ func _ready() -> void:
 	_test_security()
 	await _test_review_regressions()
 	_test_constants()
+	_test_ui_skin()
 
 	for path: String in GENRE_SUITES:
 		# Módulo presente sem a suíte = suíte renomeada/apagada por engano.
@@ -405,6 +412,21 @@ func _test_review_regressions() -> void:
 			"Migração v1→v2 move as habilidades para a chave nova")
 	SaveSystem.delete_save(slot)
 	SaveSystem.new_game(TEST_SLOT)
+
+
+## Skin da interface: quem troca o visual substitui os PNGs de assets/ui/. Um
+## arquivo apagado ou renomeado quebraria o tema de todas as telas.
+func _test_ui_skin() -> void:
+	print("\n== ui_skin ==")
+	var theme := load(ProjectSettings.get_setting("gui/theme/custom")) as Theme
+	check(theme != null, "Tema global carrega")
+	var missing: Array[String] = []
+	for file: String in UI_SKIN_FILES:
+		if not ResourceLoader.exists("res://assets/ui/" + file):
+			missing.append(file)
+	check(missing.is_empty(), "Peças da skin presentes em assets/ui %s" % [missing])
+	check(theme != null and theme.get_stylebox(&"normal", &"Button") is StyleBoxTexture,
+			"Botões usam a imagem da skin")
 
 
 ## Actions/Groups são a única fonte dos nomes: garante que não divergem do

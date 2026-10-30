@@ -135,6 +135,7 @@ ui/            main_menu/ pause_menu/ settings_menu/ controls_menu/ hud/ touch_c
   debug/         DebugOverlay (F3) and DebugConsole (F1)
 localization/  translations.csv (en, pt_BR)
 assets/        Shared assets (sprites, audio, fonts, shaders)
+  ui/            UI skin: replace the PNGs and every screen changes (see the folder README)
 tests/         Smoke test runner
 tools/         New-game wizard and genre setup (the wizard removes them at the end)
 addons/        project_wizard: the wizard window (Project → Tools)

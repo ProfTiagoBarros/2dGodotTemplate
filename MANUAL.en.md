@@ -32,6 +32,7 @@ A practical guide to starting a new game from the template, making the initial c
 | **Controls** | Keyboard, mouse, gamepad and touch, with player **remapping** and button prompts that follow the device |
 | **PC + mobile** | Virtual joystick, safe area (notch), pause when minimized, Android back button, desktop-only options hidden on phones |
 | **Game feel** | Hitstop, damage flash, squash & stretch, dust, sparks, screen shake |
+| **Interface** | "Template Chronicles" skin (cyberpunk with a touch of fantasy) on every screen: replace the PNGs in `assets/ui/` and the whole game changes look |
 | **Debug** | F3 overlay, F1 console with commands (god, tp, level…), leveled logging |
 | **Quality** | Automated smoke test and GitHub CI that tests every push and builds Windows, Linux, Web and Android on every tag |
 
@@ -363,6 +364,24 @@ Good places to hook sounds: the player's `jump()` and `start_dash()`, `EventBus.
 Overdoing everything tires the player. Players can turn hitstop and screen shake off in the settings, and it's good to keep those options.
 
 ---
+
+### 5.12 Changing the UI look (skin)
+
+Menu, pause, settings, controls and HUD use a single theme (`ui/theme/main_theme.tres`), which builds buttons, panels, bars, sliders and toggles **from the PNGs in `assets/ui/`**. The default look is **Template Chronicles**.
+
+To give the game your own look:
+
+1. Open `assets/ui/README.md`: it lists each piece, its size and its fixed (9-slice) borders.
+2. Draw the new piece **at the same size** and save over the old one, **with the same name**. Godot reimports it and every screen changes together.
+3. Text colors, the font and title styles (`TitleLabel` on the menu, `HeaderLabel` on panels) are set in the theme itself: open `main_theme.tres` in the editor.
+
+Tips:
+
+- **Start with the background and the emblem** (`menu_background.png`, `emblem.png`). They change the identity the most and have no borders to respect.
+- **Fixed borders:** panel and button corners never stretch, only the middle does. Keep bevels and glows inside those margins.
+- **Canva:** you can generate the background and emblem with AI. For a transparent background, use *remove background* and export a PNG at the final size (e.g. 640×360 for the background).
+- **Don't use `theme_override_styles` in scenes:** a local style ignores the skin. If a screen needs a different look, add a *type variation* to the theme, like `TitleLabel`.
+- The smoke test fails if a skin piece is deleted or renamed.
 
 ## 6. Everyday tools
 

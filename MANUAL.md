@@ -32,6 +32,7 @@ Guia prático para começar um jogo novo a partir do template, fazer as modifica
 | **Controles** | Teclado, mouse, gamepad e toque, com **remapeamento** pelo jogador e dicas de botão que mudam com o dispositivo |
 | **PC + celular** | Joystick virtual, safe area (notch), pausa ao minimizar, botão voltar do Android, opções só de desktop escondidas no celular |
 | **Game feel** | Hitstop, flash de dano, squash & stretch, poeira, faíscas, tremor de tela |
+| **Interface** | Skin "Template Chronicles" (cyberpunk com toque de fantasia) em todas as telas: troque os PNGs de `assets/ui/` e o jogo inteiro muda de visual |
 | **Debug** | Overlay F3, console F1 com comandos (god, tp, level…), log com níveis |
 | **Qualidade** | Smoke test automático e CI no GitHub que testa a cada push e gera builds para Windows, Linux, Web e Android a cada tag |
 
@@ -363,6 +364,24 @@ Bons lugares para ligar sons: `jump()` e `start_dash()` do player, `EventBus.ene
 Exagerar em tudo cansa o jogador. O jogador pode desligar o hitstop e o tremor de tela nas configurações, e é bom manter essas opções.
 
 ---
+
+### 5.12 Trocar o visual da interface (skin)
+
+Menu, pausa, configurações, controles e HUD usam um único tema (`ui/theme/main_theme.tres`), que monta botões, painéis, barras, sliders e chaves **a partir dos PNGs de `assets/ui/`**. O visual padrão é o **Template Chronicles**.
+
+Para dar ao jogo a sua cara:
+
+1. Abra `assets/ui/README.md`: ele lista cada peça, o tamanho e as bordas fixas (9-slice).
+2. Desenhe a peça nova **no mesmo tamanho** e salve por cima, **com o mesmo nome**. O Godot reimporta sozinho e todas as telas mudam juntas.
+3. Cores do texto, fonte e estilo dos títulos (`TitleLabel` no menu, `HeaderLabel` nos painéis) se ajustam no próprio tema, abrindo `main_theme.tres` no editor.
+
+Dicas:
+
+- **Comece pelo fundo e pelo emblema** (`menu_background.png`, `emblem.png`). São os que mais mudam a identidade, e não têm bordas para respeitar.
+- **Bordas fixas:** os cantos de painéis e botões nunca esticam, só o meio. Deixe chanfros e brilhos dentro dessas margens.
+- **Canva:** dá para gerar o fundo e o emblema com IA. Para fundo transparente, use *remover fundo* e exporte em PNG no tamanho final (ex.: 640×360 para o fundo).
+- **Não use `theme_override_styles` nas cenas:** um estilo local ignora a skin. Se uma tela precisar de um visual diferente, crie uma *variação de tipo* no tema, como `TitleLabel`.
+- O smoke test acusa se alguma peça da skin for apagada ou renomeada.
 
 ## 6. Ferramentas do dia a dia
 

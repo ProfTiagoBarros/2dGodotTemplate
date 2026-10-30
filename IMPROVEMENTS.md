@@ -59,6 +59,8 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 
 ## 5. Arte e mundo
 
+- [ ] **Skin, próximos passos**: fonte pixel art no tema (`default_font`), ícones de habilidade e os elementos da HUD do layout de referência no Canva (barra de energia, minimapa, contador de créditos, slots de habilidade), e um shader de brilho/scanline opcional para os painéis.
+
 - [ ] **TileMapLayer** + TileSet com terrains (autotile) e física por tile, substituindo os `SolidBlock` de greybox.
 - [ ] **Pipeline Aseprite**: addon **Aseprite Wizard** para importar `.aseprite` direto como `SpriteFrames`/animações.
 - [ ] **Pixel-perfect opcional**: `display/window/stretch/scale_mode="integer"` ou render em `SubViewport` de baixa resolução com upscale, avaliando o efeito em telas de celular com proporções incomuns.

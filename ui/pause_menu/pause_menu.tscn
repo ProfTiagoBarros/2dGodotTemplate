@@ -23,7 +23,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.6)
+color = Color(0.02, 0.03, 0.08, 0.7)
 
 [node name="Center" type="CenterContainer" parent="Root"]
 layout_mode = 1
@@ -33,30 +33,34 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MenuBox" type="VBoxContainer" parent="Root/Center"]
+[node name="MenuBox" type="PanelContainer" parent="Root/Center"]
 unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Root/Center/MenuBox"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Title" type="Label" parent="Root/Center/MenuBox"]
+[node name="Title" type="Label" parent="Root/Center/MenuBox/VBox"]
 layout_mode = 2
+theme_type_variation = &"HeaderLabel"
 theme_override_font_sizes/font_size = 24
 text = "UI_PAUSED"
 horizontal_alignment = 1
 
-[node name="ResumeButton" type="Button" parent="Root/Center/MenuBox"]
+[node name="ResumeButton" type="Button" parent="Root/Center/MenuBox/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(180, 36)
 layout_mode = 2
 text = "UI_RESUME"
 
-[node name="SettingsButton" type="Button" parent="Root/Center/MenuBox"]
+[node name="SettingsButton" type="Button" parent="Root/Center/MenuBox/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(180, 36)
 layout_mode = 2
 text = "UI_SETTINGS"
 
-[node name="MainMenuButton" type="Button" parent="Root/Center/MenuBox"]
+[node name="MainMenuButton" type="Button" parent="Root/Center/MenuBox/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(180, 36)
 layout_mode = 2

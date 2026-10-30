@@ -45,7 +45,7 @@ theme_override_constants/separation = 6
 
 [node name="Title" type="Label" parent="Center/Panel/Margin/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"HeaderLabel"
 text = "UI_CONTROLS"
 horizontal_alignment = 1
 
