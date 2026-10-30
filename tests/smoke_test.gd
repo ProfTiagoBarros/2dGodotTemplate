@@ -45,6 +45,7 @@ func _ready() -> void:
 	await _test_review_regressions()
 	_test_constants()
 	_test_ui_skin()
+	await _test_dual_grid()
 
 	for path: String in GENRE_SUITES:
 		# Módulo presente sem a suíte = suíte renomeada/apagada por engano.
@@ -412,6 +413,38 @@ func _test_review_regressions() -> void:
 			"Migração v1→v2 move as habilidades para a chave nova")
 	SaveSystem.delete_save(slot)
 	SaveSystem.new_game(TEST_SLOT)
+
+
+## DualGridTerrain: o tile visual de cada célula vem dos 4 cantos lógicos.
+func _test_dual_grid() -> void:
+	print("\n== dual_grid ==")
+	var tile_set := TileSet.new()
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = ImageTexture.create_from_image(Image.create_empty(64, 64, false, Image.FORMAT_RGBA8))
+	atlas.texture_region_size = tile_set.tile_size
+	for y in 4:
+		for x in 4:
+			atlas.create_tile(Vector2i(x, y))
+	tile_set.add_source(atlas, 0)
+	var source := TileMapLayer.new()
+	source.tile_set = tile_set
+	var terrain := DualGridTerrain.new()
+	terrain.tile_set = tile_set
+	add_child(source)
+	add_child(terrain)
+	source.set_cell(Vector2i.ZERO, 0, Vector2i(1, 0)) # uma célula de terreno de cima
+	terrain.source = source
+	var layout := DualGridTerrain.PIXELLAB_LAYOUT
+	check(terrain.get_cell_atlas_coords(Vector2i(0, 0)) == layout[1]
+			and terrain.get_cell_atlas_coords(Vector2i(1, 1)) == layout[8],
+			"Grade dupla escolhe o tile pelos cantos (SE e NO)")
+	check(terrain.get_cell_source_id(Vector2i(2, 2)) == -1, "Grade dupla não desenha longe do terreno")
+	check(terrain.position == -Vector2(tile_set.tile_size) * 0.5, "Camada visual fica deslocada meio tile")
+	terrain.painted_is_lower = true
+	check(terrain.get_cell_atlas_coords(Vector2i(0, 0)) == layout[14], "painted_is_lower inverte os cantos")
+	terrain.queue_free()
+	source.queue_free()
+	await get_tree().process_frame
 
 
 ## Skin da interface: quem troca o visual substitui os PNGs de assets/ui/. Um

@@ -55,18 +55,18 @@ Itens que ficaram fora da base do template, por dependerem de decisões do jogo,
 - [x] ~~Platformer: ataque direcional + pogo, dash, pulo duplo e sistema de habilidades desbloqueáveis~~ (base metroidvania).
 - [ ] **Platformer/metroidvania — próximas habilidades**: wall slide/wall jump, plataformas one-way (`one_way_collision`, com "descer" segurando ↓ + pulo), escadas, gancho/grapple.
 - [ ] **Metroidvania — mundo**: portas/barreiras que exigem habilidade (`has_ability`), mapa por salas com transições (`Area2D` nas bordas → `SceneLoader` + ponto de entrada), minimapa revelado por sala visitada, save points/bancos e câmera com limites por sala + look-ahead horizontal.
-- [ ] Animações reais: `AnimatedSprite2D`/`AnimationPlayer` acionados no `enter()` de cada estado e `AnimationTree` se a blend ficar complexa.
+- [x] ~~Animações reais~~: `AnimatedSprite2D` em `Visual/Squash/Sprite`, trocado pela `Character` a cada mudança de estado (arte do PixelLab). Próximo passo: `AnimationTree` se a blend ficar complexa.
 
 ## 5. Arte e mundo
 
 - [ ] **Skin, próximos passos**: fonte pixel art no tema (`default_font`), ícones de habilidade e os elementos da HUD do layout de referência no Canva (barra de energia, minimapa, contador de créditos, slots de habilidade), e um shader de brilho/scanline opcional para os painéis.
 
-- [ ] **TileMapLayer** + TileSet com terrains (autotile) e física por tile, substituindo os `SolidBlock` de greybox.
+- [x] ~~TileMapLayer com autotile~~: `DualGridTerrain` (grade dupla) com tilesets de cantos do PixelLab; a colisão fica na camada lógica.
 - [ ] **Pipeline Aseprite**: addon **Aseprite Wizard** para importar `.aseprite` direto como `SpriteFrames`/animações.
 - [ ] **Pixel-perfect opcional**: `display/window/stretch/scale_mode="integer"` ou render em `SubViewport` de baixa resolução com upscale, avaliando o efeito em telas de celular com proporções incomuns.
-- [ ] **Parallax** de fundo com o nó `Parallax2D` (platformer).
+- [x] ~~Parallax de fundo~~ com `Parallax2D` no platformer. Próximo passo: várias camadas com velocidades diferentes.
 - [ ] **Top-down**: TileMapLayer com Y-sort por tile (paredes/objetos altos) e `TileMapLayer` separado para o chão.
-- [ ] Limites de câmera por fase (`limit_*`) definidos pelo `Level`.
+- [x] ~~Limites de câmera por fase~~: `Level.camera_limits`.
 
 ## 6. Game feel ("juice")
 

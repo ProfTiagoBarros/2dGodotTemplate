@@ -202,31 +202,39 @@ Os exemplos são úteis enquanto você aprende o template. Quando o jogo tiver c
 
 ### 5.1 Trocar a arte do personagem
 
-Os personagens usam esta estrutura:
+Os personagens do template (o herói, o androide e o slime) foram gerados com o **PixelLab** (pixellab.ai) no tema *Template Chronicles*. O player tem **32×48** px no platformer e **32×32** no top-down. Todos seguem esta estrutura:
 
 ```
 Player
 └─ Visual          ← vira para os lados (scale.x = ±1)
    ├─ Shadow       ← (top-down) fica fora do Squash
    └─ Squash       ← deforma (squash & stretch) e pisca ao levar dano
-      ├─ Body      ← troque estes polígonos pela sua arte
-      └─ Eye
+      └─ Sprite    ← AnimatedSprite2D com as animações
 ```
 
-1. Apague `Body` e `Eye` e coloque um `Sprite2D` ou `AnimatedSprite2D` **dentro de `Squash`**.
-2. Posicione a arte com os **pés na origem** (0, 0). Assim o squash mantém os pés no chão e o Y-sort do top-down funciona.
-3. Para animações, ligue cada uma no `enter()` do estado correspondente:
+**A animação segue o estado sozinha.** A classe `Character` toca no `Sprite` a animação com o nome do estado em minúsculas: o estado `Idle` toca `idle`, `Run` toca `run`, `Attack` toca `attack`. Você não precisa escrever código nos estados. Os casos especiais:
 
-```gdscript
-# platformer_player.gd
-@onready var sprite: AnimatedSprite2D = $Visual/Squash/Sprite
+| Personagem | Animações esperadas |
+|---|---|
+| Platformer | `idle`, `run`, `jump`, `fall`, `attack`, `attack_up`, `attack_down`, `dash` |
+| Top-down | as mesmas por direção: `idle_south`, `walk_east`, `attack_north_east`… (sul, sudeste, leste, nordeste e norte; o lado oeste é o leste espelhado) |
+| Inimigos | `walk` (patrulha e perseguição), `idle` (aviso e recuperação), `attack`, `hurt` |
 
-# states/run_state.gd
-func enter(_previous: StringName, _data: Dictionary = {}) -> void:
-	player.sprite.play(&"run")
-```
+Animação que não existe é simplesmente ignorada: o slime só tem `idle` e funciona assim.
 
-> Para importar direto do **Aseprite**, o addon *Aseprite Wizard* gera as `SpriteFrames` a partir do `.aseprite`.
+**Para usar o seu personagem:**
+
+1. Gere ou desenhe as animações. No PixelLab, crie o personagem no tamanho do jogo e anime só a direção leste no platformer (ou 5 direções no top-down); baixe os quadros de cada animação numa pasta própria (`idle/0.png`, `idle/1.png`…). Do Aseprite, exporte cada tag como quadros soltos.
+2. Importe tudo de uma vez:
+   ```bash
+   godot --headless --path . -s res://tools/import_frames.gd -- C:/minhas_animacoes res://game/platformer/player/art hero
+   ```
+   O script monta uma tira PNG por animação e o `hero_frames.tres` (um `SpriteFrames`). Ataques, pulo e dash saem sem loop.
+3. Ajuste a velocidade de cada animação abrindo o `.tres` no editor (painel SpriteFrames).
+4. No `Sprite`, ajuste o `offset` para os **pés ficarem na origem** (0, 0): o squash mantém os pés no chão e o Y-sort do top-down funciona. Os quadros do PixelLab vêm centralizados, então um único `offset` serve para todas as animações.
+5. Ajuste colisão, hurtbox e hitbox do golpe ao tamanho da arte nova.
+
+> Para importar direto do **Aseprite**, o addon *Aseprite Wizard* também gera as `SpriteFrames` a partir do `.aseprite`.
 
 ### 5.2 Ajustar o movimento sem tocar em código
 
@@ -244,14 +252,33 @@ O pulo do platformer é definido em termos de design: **altura em pixels** (`jum
 
 ### 5.3 Criar fases
 
-1. Duplique a fase de exemplo do seu gênero e renomeie.
-2. No nó raiz da fase (script `level.gd`), confira no Inspector:
-   - `level_id`: identificador único (ex.: `&"caverna_01"`).
-   - `music`: a música da fase, que toca com crossfade.
-   - `touch_actions`: o que os botões de toque A, B e C fazem.
-   - `hud_hint_actions`: quais dicas de botão aparecem na tela. Numa fase de tutorial, mostre só o que já foi ensinado.
-3. Para prototipar, use os blocos `SolidBlock` (greybox). Quando a arte chegar, troque por `TileMapLayer`.
-4. Para testar uma fase rapidamente: **F1** → `level nome_da_fase`.
+As fases de exemplo usam **tilesets do PixelLab** com encaixe automático por cantos: um telhado cyberpunk no platformer e rua molhada com calçadas de metal no top-down.
+
+**Como pintar o cenário:** cada fase tem duas camadas de tiles.
+
+| Camada | O que é |
+|---|---|
+| `Terrain` (platformer) / `Ground` (top-down) | Camada **lógica**: você pinta aqui. Tem a colisão (no platformer) e aparece semitransparente no editor |
+| `TerrainArt` / `GroundArt` | Camada **visual** (`DualGridTerrain`): escolhe sozinha o tile de cada borda e canto, a partir do que você pintou |
+
+1. Selecione a camada lógica e, no painel **TileMap**, pinte com o tile ciano (terreno "de cima": bloco no platformer, calçada no top-down). No top-down, pinte a rua com o tile azul-escuro.
+2. A camada visual se atualiza sozinha no editor.
+
+**Para trocar o tileset:** gere um novo no PixelLab (*sidescroller tileset* para o platformer, *top-down tileset* para o top-down) e substitua o PNG em `game/<gênero>/levels/tiles/`. A ordem dos 16 tiles das folhas do PixelLab é sempre a mesma. Nos tilesets laterais do PixelLab o bloco é o terreno "de baixo", por isso a camada visual do platformer usa `painted_is_lower = true`.
+
+**Configuração da fase** (nó raiz, script `level.gd`):
+- `level_id`: identificador único (ex.: `&"caverna_01"`).
+- `music`: a música da fase, que toca com crossfade.
+- `touch_actions`: o que os botões de toque A, B e C fazem.
+- `hud_hint_actions`: quais dicas de botão aparecem na tela. Numa fase de tutorial, mostre só o que já foi ensinado.
+- `camera_limits`: a área que a câmera pode mostrar, para ela não sair do cenário.
+
+**Mais detalhes:**
+- **Fundo:** o platformer usa um `Parallax2D` com a imagem `assets/ui/menu_background.png`, que se move devagar.
+- **Decoração:** postes, caixas, terminais e máquinas ficam em `game/world/decor/`.
+- **Marcadores de teste:** o nó `TestMarkers` guarda posições usadas pelos testes automáticos (chão livre, topo da plataforma…). Ao redesenhar a fase, mova os marcadores junto, e o smoke test continua valendo.
+- **Greybox:** para prototipar sem arte, os blocos `SolidBlock` continuam disponíveis.
+- **Testar uma fase rapidamente:** **F1** → `level nome_da_fase`.
 
 No top-down, coloque personagens, inimigos e objetos altos dentro do nó `Entities`, que tem Y-sort. Coisas no chão (tapetes, espinhos) ficam em `FloorDecals`.
 

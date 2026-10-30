@@ -11,6 +11,10 @@ extends PlayerCharacter
 
 enum AimSource { MOVEMENT, MOUSE, STICK }
 
+## Sufixos das animações por direção, de norte (0) a sul (4). Só o lado leste
+## é desenhado: o oeste é o mesmo sprite espelhado (Visual.scale.x).
+const DIRECTION_SUFFIXES: Array[StringName] = [&"_north", &"_north_east", &"_east", &"_south_east", &"_south"]
+
 @export var stats: TopDownStats
 
 ## Última direção de movimento (unitária).
@@ -20,6 +24,7 @@ var aim_direction := Vector2.DOWN
 var aim_source := AimSource.MOVEMENT
 
 var _dash_cooldown_left := 0.0
+var _direction_suffix: StringName = DIRECTION_SUFFIXES[4]
 
 @onready var _aim_indicator: Node2D = $AttackPivot/AimIndicator
 
@@ -108,3 +113,20 @@ func _set_aim(direction: Vector2) -> void:
 		attack_pivot.rotation = aim_direction.angle()
 	if not is_zero_approx(aim_direction.x):
 		visual.scale.x = signf(aim_direction.x)
+	# A animação acompanha a mira (travada durante o golpe, como a hitbox).
+	if not is_attacking():
+		var suffix := direction_suffix(aim_direction)
+		if suffix != _direction_suffix:
+			_direction_suffix = suffix
+			refresh_animation()
+
+
+## Cada animação tem uma versão por direção (ex.: "walk" + "_north_east").
+func animation_for_state(state: StringName) -> StringName:
+	return StringName(String(super.animation_for_state(state)) + String(_direction_suffix))
+
+
+## Direção desenhada mais próxima de `direction`, com o lado oeste espelhado.
+static func direction_suffix(direction: Vector2) -> StringName:
+	var angle := rad_to_deg(atan2(direction.y, absf(direction.x)))
+	return DIRECTION_SUFFIXES[clampi(roundi((angle + 90.0) / 45.0), 0, DIRECTION_SUFFIXES.size() - 1)]

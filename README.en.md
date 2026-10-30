@@ -125,9 +125,9 @@ game/          Game content, organized BY FEATURE
   game_debug_commands.gd  Console commands and gameplay watches
   hazards/       DamageZone (spikes)
   props/         TrainingDummy, AbilityPickup
-  characters/    Character and PlayerCharacter: abstract bases of every combat character
+  characters/    Character and PlayerCharacter: abstract bases of every combat character (including state-driven animation)
   enemies/       Enemy (generic base), EnemyStats and shared AI states
-  world/         SolidBlock (greybox)
+  world/         DualGridTerrain (corner-based tiles), decoration (decor/) and SolidBlock (greybox)
   platformer/    Side-scrolling MODULE: player, states, stats, enemy, level, tests
   topdown/       Top-down MODULE: player, states, stats, enemy, pillar, level, tests
 ui/            main_menu/ pause_menu/ settings_menu/ controls_menu/ hud/ touch_controls/
@@ -137,7 +137,7 @@ localization/  translations.csv (en, pt_BR)
 assets/        Shared assets (sprites, audio, fonts, shaders)
   ui/            UI skin: replace the PNGs and every screen changes (see the folder README)
 tests/         Smoke test runner
-tools/         New-game wizard and genre setup (the wizard removes them at the end)
+tools/         New-game wizard, genre setup, animation importer and UI skin generator
 addons/        project_wizard: the wizard window (Project → Tools)
 ```
 
@@ -262,6 +262,17 @@ States: **Idle → Walk → Dash → Attack**.
 - **Dash** at fixed speed, with i-frames (`HealthComponent.grant_invulnerability`) and cooldown. It follows the movement direction, or the aim direction when standing still.
 - **Melee attack** in the aim direction. The hitbox stays locked at the starting angle during `attack_duration`.
 
+### Art: characters, tiles and scenery (PixelLab)
+
+The game art was generated with **[PixelLab](https://www.pixellab.ai)** in the *Template Chronicles* theme: the hero (**32×48** in the platformer, **32×32** in top-down), the android, the slime, the tilesets, the props (training dummy, ability orb, spikes, pillars, lamps, crates, terminals) and the decoration.
+
+- **State-driven animation:** the `Character` class plays on `Visual/Squash/Sprite` (`AnimatedSprite2D`) the animation named after the current state (`Idle` → `idle`). The platformer picks `attack_up`/`attack_down` from the attack direction; top-down appends the aim direction (`walk_north_east`), drawing only the east side and mirroring the west. Enemies use `walk`, `idle`, `attack` and `hurt`.
+- **Importer:** `tools/import_frames.gd` turns frame folders (`idle/0.png`…) into PNG strips and a `SpriteFrames`. It works for PixelLab, Aseprite or any tool that exports separate frames.
+- **Auto-fitting tiles:** `DualGridTerrain` (`game/world/`) draws 16-tile corner tilesets (PixelLab's format) from a hand-painted logic layer, using the dual-grid technique. Collision lives on the logic layer and matches the art exactly.
+- **Levels:** `Level.camera_limits` keeps the camera inside the scenery. The platformer has a `Parallax2D` background. Tests read positions from markers (`TestMarkers`) instead of fixed coordinates, so a level can be redesigned without breaking the tests.
+
+Details and step by step in the [MANUAL](MANUAL.en.md#51-replacing-the-character-art).
+
 ### Enemies
 
 A generic base (`game/enemies/`) serves both genres. The AI is a shared state machine:
@@ -372,6 +383,7 @@ This template was conceived and directed by **Tiago de Souza Barros** and develo
 
 - **What the AI did:** architecture, GDScript code, scenes, automated tests, CI and documentation were produced in collaboration with Claude, based on the author's requirements, decisions and reviews.
 - **How it was verified:** every change was validated with the automated smoke test (126 checks), with real builds on GitHub Actions for Windows, Linux, Web and Android, and with a security and performance review that reproduced the vulnerability it found before fixing it.
+- **Art:** game characters, tiles, props and animations were generated with **[PixelLab](https://www.pixellab.ai)**; the menu background, the emblem and the UI reference layouts with **[Canva](https://www.canva.com)** AI. The UI pieces (panels, buttons, bars) are drawn in code (`tools/generate_ui_skin.gd`).
 - **Traceability:** commits made with the AI carry the `Co-Authored-By: Claude` trailer.
 - **Responsibility:** final decisions and maintenance belong to the author. As with any third-party code, review and test before using it in production.
 - [CLAUDE.md](CLAUDE.md) contains the architecture instructions used by Claude Code and lets you keep developing with AI while following the project's patterns.

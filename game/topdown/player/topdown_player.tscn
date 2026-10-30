@@ -13,15 +13,16 @@
 [ext_resource type="Script" path="res://game/topdown/player/states/attack_state.gd" id="11_attack"]
 [ext_resource type="Script" path="res://core/feel/squash_stretch.gd" id="12_squash"]
 [ext_resource type="Script" path="res://core/feel/hit_flash_component.gd" id="13_flash"]
+[ext_resource type="SpriteFrames" path="res://game/topdown/player/art/hero_frames.tres" id="14_frames"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_feet"]
-radius = 5.0
+radius = 7.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
-size = Vector2(10, 14)
+size = Vector2(16, 24)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
-size = Vector2(14, 18)
+size = Vector2(26, 30)
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
@@ -35,21 +36,19 @@ hit_shake = 0.2
 
 [node name="Shadow" type="Polygon2D" parent="Visual"]
 color = Color(0, 0, 0, 0.3)
-polygon = PackedVector2Array(-7, 0, -5, -2, 0, -3, 5, -2, 7, 0, 5, 2, 0, 3, -5, 2)
+polygon = PackedVector2Array(-11, 0, -8, -3, 0, -4, 8, -3, 11, 0, 8, 3, 0, 4, -8, 3)
 
 [node name="Squash" type="Node2D" parent="Visual"]
 script = ExtResource("12_squash")
 
-[node name="Body" type="Polygon2D" parent="Visual/Squash"]
-color = Color(0.36, 0.75, 0.95, 1)
-polygon = PackedVector2Array(-5, -14, 5, -14, 5, 0, -5, 0)
-
-[node name="Eye" type="Polygon2D" parent="Visual/Squash"]
-color = Color(0.1, 0.1, 0.15, 1)
-polygon = PackedVector2Array(1, -11, 4, -11, 4, -8, 1, -8)
+[node name="Sprite" type="AnimatedSprite2D" parent="Visual/Squash"]
+sprite_frames = ExtResource("14_frames")
+animation = &"idle_south"
+autoplay = "idle_south"
+offset = Vector2(0, -15)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -3)
+position = Vector2(0, -4)
 shape = SubResource("CircleShape2D_feet")
 
 [node name="HealthComponent" type="Node" parent="."]
@@ -71,11 +70,11 @@ team = &"player"
 health = NodePath("../HealthComponent")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -7)
+position = Vector2(0, -12)
 shape = SubResource("RectangleShape2D_hurtbox")
 
 [node name="AttackPivot" type="Node2D" parent="."]
-position = Vector2(0, -7)
+position = Vector2(0, -12)
 
 [node name="AttackHitbox" type="Area2D" parent="AttackPivot"]
 collision_layer = 8
@@ -85,21 +84,21 @@ script = ExtResource("5_hitbox")
 team = &"player"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackPivot/AttackHitbox"]
-position = Vector2(14, 0)
+position = Vector2(22, 0)
 shape = SubResource("RectangleShape2D_attack")
 disabled = true
 
 [node name="Slash" type="Polygon2D" parent="AttackPivot/AttackHitbox"]
-color = Color(1, 1, 1, 0.75)
-polygon = PackedVector2Array(8, -9, 16, -6, 20, 0, 16, 6, 8, 9, 13, 0)
+color = Color(0.55, 0.95, 1, 0.55)
+polygon = PackedVector2Array(12, -15, 26, -10, 34, 0, 26, 10, 12, 15, 20, 0)
 
 [node name="AimIndicator" type="Polygon2D" parent="AttackPivot"]
 visible = false
-color = Color(1, 0.85, 0.4, 0.8)
-polygon = PackedVector2Array(20, 0, 15, -3, 16, 0, 15, 3)
+color = Color(1, 0.18, 0.66, 0.85)
+polygon = PackedVector2Array(30, 0, 22, -5, 24, 0, 22, 5)
 
 [node name="Camera" type="Camera2D" parent="."]
-position = Vector2(0, -8)
+position = Vector2(0, -16)
 process_callback = 0
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0

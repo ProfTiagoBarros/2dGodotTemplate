@@ -4,3 +4,13 @@
 
 [resource]
 script = ExtResource("1_stats")
+patrol_speed = 60.0
+chase_speed = 130.0
+acceleration = 1000.0
+gravity = 1800.0
+max_fall_speed = 700.0
+detection_radius = 200.0
+lose_target_radius = 300.0
+attack_range = 52.0
+lunge_speed = 340.0
+knockback_speed = 260.0

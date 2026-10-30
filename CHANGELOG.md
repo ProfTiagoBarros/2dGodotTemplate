@@ -9,6 +9,13 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), 
 
 ### Adicionado
 
+- Arte de jogo gerada com o PixelLab no tema Template Chronicles: herói animado (platformer 32×48 e top-down 32×32 em 8 direções), androide e slime animados, tilesets de telhado cyberpunk e de rua, objetos (alvo de treino, orbe de habilidade, espinhos, colunas) e decoração.
+- Fases novas para os dois gêneros: telhados com plataformas, plataforma alta para o pulo duplo, escadaria e fundo em parallax; rua com calçadas e praça no top-down.
+- `DualGridTerrain`: desenha tilesets de cantos (formato do PixelLab) a partir de uma camada lógica pintada à mão, com colisão alinhada à arte.
+- Animação por estado na `Character`: cada estado toca a animação de mesmo nome; o top-down escolhe a direção pela mira e espelha o lado oeste.
+- `tools/import_frames.gd`: importa pastas de quadros (PixelLab, Aseprite…) como tiras PNG e `SpriteFrames`.
+- `Level.camera_limits`: a câmera não sai do cenário.
+- Testes de gênero leem posições de marcadores (`TestMarkers`) da fase em vez de coordenadas fixas.
 - Skin de interface **Template Chronicles** (cyberpunk com toque de fantasia): o tema global monta botões, painéis, barras, sliders e chaves a partir dos PNGs de `assets/ui/`, então trocar os arquivos muda o visual de todas as telas. Inclui fundo do menu e emblema gerados no Canva, título com contorno neon, painel no menu de pausa e o gerador `tools/generate_ui_skin.gd`. O título do menu passa a ser "Template Chronicles".
 - Assistente de novo jogo: **Project → Tools → Configurar novo jogo…** pergunta nome, tipo de jogo (platformer, top-down ou só a base), plataformas e como tratar as docs, e configura o projeto (módulos, presets de exportação, CI, título, README/CHANGELOG do jogo e `CLAUDE.md` enxuto). Também disponível por linha de comando (`tools/setup_project_cli.gd`, com `--dry-run`).
 - Opção **só a base** no setup de gênero: remove os módulos e cria uma fase vazia, para jogos de outros gêneros.
@@ -18,6 +25,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), 
 
 ### Alterado
 
+- Player do platformer passa a 32×48 e o do top-down a 32×32. Movimento, pulo, dash, hitboxes, câmera e números dos inimigos foram escalados junto.
 - Código duplicado entre players e inimigos extraído para as classes abstratas `Character` e `PlayerCharacter` (`game/characters/`). `PlatformerPlayer`, `TopDownPlayer` e `Enemy` agora só implementam movimento e os ganchos `@abstract` (`apply_knockback`, `get_facing_vector`, `_play_death`); esquecer um deles é erro de compilação. Tremor e hitstop de combate viraram propriedades exportadas (`hurt_shake`, `hit_hitstop`…).
 - Nomes de ações e grupos agora são constantes (`Actions.JUMP`, `Groups.PLAYER`…, em `core/constants/`). O smoke test falha se o InputMap tiver ação fora de `Actions.ALL`.
 - `SaveSystem.PERSIST_GROUP` foi removido; use `Groups.PERSIST`.

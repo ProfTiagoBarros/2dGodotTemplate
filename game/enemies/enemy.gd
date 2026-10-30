@@ -13,6 +13,11 @@ extends Character
 
 signal target_changed(target: Node2D)
 
+## Animações compartilhadas por vários estados (as demais usam o nome do estado:
+## "attack", "hurt").
+const ANIM_WALK := &"walk"
+const ANIM_IDLE := &"idle"
+
 @export var stats: EnemyStats
 ## Intervalo entre checagens de percepção (s). O raycast de linha de visão é a
 ## parte cara; 10 Hz é imperceptível e funciona como "tempo de reação".
@@ -122,6 +127,16 @@ func apply_knockback(direction: Vector2) -> void:
 
 func get_facing_vector() -> Vector2:
 	return facing
+
+
+## Patrulha e perseguição andam; preparar o bote e recuperar ficam parados.
+func animation_for_state(state: StringName) -> StringName:
+	match state:
+		EnemyState.PATROL, EnemyState.CHASE:
+			return ANIM_WALK
+		EnemyState.WINDUP, EnemyState.RECOVER:
+			return ANIM_IDLE
+	return super.animation_for_state(state)
 
 
 func face(direction: Vector2) -> void:

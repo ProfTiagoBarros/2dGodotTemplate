@@ -125,9 +125,9 @@ game/          Conteúdo do jogo, organizado POR FEATURE
   game_debug_commands.gd  Comandos de console e watches de gameplay
   hazards/       DamageZone (espinhos)
   props/         TrainingDummy (alvo de treino), AbilityPickup (item de habilidade)
-  characters/    Character e PlayerCharacter: bases abstratas de todo personagem de combate
+  characters/    Character e PlayerCharacter: bases abstratas de todo personagem de combate (inclui a animação por estado)
   enemies/       Enemy (base genérica), EnemyStats e estados de IA compartilhados
-  world/         SolidBlock (greybox)
+  world/         DualGridTerrain (tiles por cantos), decoração (decor/) e SolidBlock (greybox)
   platformer/    MÓDULO side-scrolling: player, estados, stats, inimigo, fase, testes
   topdown/       MÓDULO top-down: player, estados, stats, inimigo, pilar, fase, testes
 ui/            main_menu/ pause_menu/ settings_menu/ controls_menu/ hud/ touch_controls/
@@ -137,7 +137,7 @@ localization/  translations.csv (en, pt_BR)
 assets/        Assets compartilhados (sprites, audio, fonts, shaders)
   ui/            Skin da interface: troque os PNGs e todas as telas mudam (veja o README da pasta)
 tests/         Runner do smoke test
-tools/         Assistente de novo jogo e setup de gênero (o assistente remove ao final)
+tools/         Assistente de novo jogo, setup de gênero, importador de animações e gerador da skin
 addons/        project_wizard: janela do assistente (Project → Tools)
 ```
 
@@ -262,6 +262,17 @@ Estados: **Idle → Walk → Dash → Attack**.
 - **Dash** com velocidade fixa, i-frames (`HealthComponent.grant_invulnerability`) e cooldown. Vai na direção do movimento, ou na da mira se o player estiver parado.
 - **Ataque** corpo a corpo na direção da mira. A hitbox fica travada no ângulo inicial durante `attack_duration`.
 
+### Arte: personagens, tiles e cenário (PixelLab)
+
+A arte de jogo foi gerada com o **[PixelLab](https://www.pixellab.ai)** no tema *Template Chronicles*: o herói (**32×48** no platformer, **32×32** no top-down), o androide, o slime, os tilesets, os objetos (alvo de treino, orbe de habilidade, espinhos, colunas, postes, caixas, terminais) e a decoração.
+
+- **Animação por estado:** a classe `Character` toca no `Visual/Squash/Sprite` (`AnimatedSprite2D`) a animação com o nome do estado atual (`Idle` → `idle`). O platformer escolhe `attack_up`/`attack_down` pela direção do golpe; o top-down acrescenta a direção da mira (`walk_north_east`), desenhando só o lado leste e espelhando o oeste. Inimigos usam `walk`, `idle`, `attack` e `hurt`.
+- **Importador:** `tools/import_frames.gd` transforma pastas de quadros (`idle/0.png`…) em tiras PNG e num `SpriteFrames`. Serve para PixelLab, Aseprite ou qualquer ferramenta que exporte quadros soltos.
+- **Tiles com encaixe automático:** `DualGridTerrain` (`game/world/`) desenha tilesets de cantos de 16 tiles (o formato do PixelLab) a partir de uma camada lógica pintada à mão, com a técnica de grade dupla (*dual grid*). A colisão fica na camada lógica e bate exatamente com a arte.
+- **Fases:** `Level.camera_limits` mantém a câmera dentro do cenário. O platformer tem fundo em `Parallax2D`. Os testes leem posições de marcadores (`TestMarkers`) em vez de coordenadas fixas, então a fase pode ser redesenhada sem quebrar os testes.
+
+Detalhes e passo a passo no [MANUAL](MANUAL.md#51-trocar-a-arte-do-personagem).
+
 ### Inimigos
 
 Uma base genérica (`game/enemies/`) serve aos dois gêneros. A IA é uma máquina de estados compartilhada:
@@ -372,6 +383,7 @@ Este template foi idealizado e dirigido por **Tiago de Souza Barros** e desenvol
 
 - **O que a IA fez:** arquitetura, código GDScript, cenas, testes automatizados, CI e documentação foram produzidos em colaboração com o Claude, a partir dos requisitos, decisões e revisões do autor.
 - **Como foi verificado:** cada mudança foi validada com o smoke test automatizado (126 verificações), com builds reais no GitHub Actions para Windows, Linux, Web e Android, e com uma revisão de segurança e performance que reproduziu a vulnerabilidade encontrada antes de corrigi-la.
+- **Arte:** personagens, tiles, objetos e animações de jogo foram gerados com o **[PixelLab](https://www.pixellab.ai)**; o fundo do menu, o emblema e os layouts de referência da interface, com a IA do **[Canva](https://www.canva.com)**. As peças da interface (painéis, botões, barras) são desenhadas por código (`tools/generate_ui_skin.gd`).
 - **Rastreabilidade:** os commits feitos com a IA trazem o trailer `Co-Authored-By: Claude`.
 - **Responsabilidade:** as decisões finais e a manutenção são do autor. Como em qualquer código de terceiros, revise e teste antes de usar em produção.
 - O arquivo [CLAUDE.md](CLAUDE.md) contém as instruções de arquitetura usadas pelo Claude Code e serve para continuar o desenvolvimento com IA mantendo os padrões do projeto.

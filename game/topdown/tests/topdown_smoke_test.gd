@@ -3,10 +3,17 @@ extends RefCounted
 
 const LEVEL := "res://game/topdown/levels/topdown_level_01.tscn"
 const ENEMY_SCENE := preload("res://game/topdown/enemies/topdown_enemy.tscn")
+## Distância horizontal do player até um alvo para o golpe acertar.
+const MELEE_OFFSET := 30.0
+
+## Posições de teste lidas da fase (Marker2D em TestMarkers).
+var _markers: Node
 
 
 func run(t: SmokeTest) -> void:
 	var game := await t.spawn_game(LEVEL)
+	_markers = game.find_child("TestMarkers", true, false)
+	t.check(_markers != null, "Fase tem os marcadores de teste (TestMarkers)")
 	var player := game.get_tree().get_first_node_in_group(Groups.PLAYER) as TopDownPlayer
 	t.check(player != null, "TopDownPlayer instanciado")
 	if player == null:
@@ -62,7 +69,7 @@ func run(t: SmokeTest) -> void:
 	# Ataque acerta o dummy e não fere o próprio player.
 	var dummy := game.find_child("Dummy1", true, false) as Node2D
 	var dummy_health := dummy.get_node("HealthComponent") as HealthComponent
-	player.global_position = dummy.global_position + Vector2(-16.0, 0.0)
+	player.global_position = dummy.global_position + Vector2(-MELEE_OFFSET, 0.0)
 	player.velocity = Vector2.ZERO
 	player.face(Vector2.RIGHT)
 	var player_health := player.health.current
@@ -123,11 +130,11 @@ func run(t: SmokeTest) -> void:
 
 func _test_enemies(t: SmokeTest, game: Game, player: TopDownPlayer) -> void:
 	player.health.revive()
-	player.global_position = Vector2(560.0, 300.0)
+	player.global_position = _marker(&"SlimeArena")
 	player.velocity = Vector2.ZERO
 	var slime: TopDownEnemy = ENEMY_SCENE.instantiate()
 	(game.get_node("%World") as Node).get_child(0).get_node("Entities").add_child(slime)
-	slime.global_position = Vector2(480.0, 250.0)
+	slime.global_position = _marker(&"SlimeSpawn")
 	var states: Array[StringName] = []
 	slime.state_machine.state_changed.connect(func(_from: StringName, to: StringName) -> void: states.append(to))
 	await t.frames(12) # percepção a ~10 Hz + aceleração
@@ -152,7 +159,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: TopDownPlayer) -> void:
 	for hit in 3:
 		if not is_instance_valid(slime) or slime.health.is_dead():
 			break
-		player.global_position = slime.global_position + Vector2(-16.0, 0.0)
+		player.global_position = slime.global_position + Vector2(-MELEE_OFFSET, 0.0)
 		player.velocity = Vector2.ZERO
 		player.face(Vector2.RIGHT)
 		await t.frames(2)
@@ -163,3 +170,11 @@ func _test_enemies(t: SmokeTest, game: Game, player: TopDownPlayer) -> void:
 	await t.frames(30)
 	t.check(not is_instance_valid(slime), "Slime morto sai da cena")
 	player.health.god_mode = false
+
+
+func _marker(marker_name: StringName) -> Vector2:
+	var marker := _markers.get_node_or_null(NodePath(marker_name)) as Node2D if _markers != null else null
+	if marker == null:
+		push_error("Marcador de teste ausente: %s" % marker_name)
+		return Vector2.ZERO
+	return marker.global_position

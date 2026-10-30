@@ -3,10 +3,18 @@ extends RefCounted
 
 const LEVEL := "res://game/platformer/levels/platformer_level_01.tscn"
 const ENEMY_SCENE := preload("res://game/platformer/enemies/platformer_enemy.tscn")
+## Distância horizontal do player até um alvo para o golpe lateral acertar.
+const MELEE_OFFSET := 36.0
+
+## Posições de teste lidas da fase (nós Marker2D em TestMarkers), para a fase
+## poder ser redesenhada sem quebrar os testes: basta mover os marcadores.
+var _markers: Node
 
 
 func run(t: SmokeTest) -> void:
 	var game := await t.spawn_game(LEVEL)
+	_markers = game.find_child("TestMarkers", true, false)
+	t.check(_markers != null, "Fase tem os marcadores de teste (TestMarkers)")
 	var player := game.get_tree().get_first_node_in_group(Groups.PLAYER) as PlatformerPlayer
 	t.check(player != null, "PlatformerPlayer instanciado")
 	if player == null:
@@ -40,26 +48,29 @@ func _spawn_enemy(game: Game, position: Vector2) -> PlatformerEnemy:
 
 func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	player.health.revive()
-	await _place(t, player, Vector2(470.0, 280.0))
+	await _place(t, player, _marker(&"EnemyArena"))
 
 	# Patrulha: anda no chão e vira na beirada de uma plataforma pequena.
-	var walker := _spawn_enemy(game, Vector2(200.0, 280.0))
-	var ledge_walker := _spawn_enemy(game, Vector2(260.0, 234.0))
+	var walker := _spawn_enemy(game, _marker(&"WalkerSpawn"))
+	var ledge_top := _marker(&"LedgeTop")
+	var ledge_walker := _spawn_enemy(game, ledge_top)
 	await t.frames(5)
 	var start_x := walker.global_position.x
 	t.check(walker.state_machine.current_state.name == EnemyState.PATROL, "Inimigo começa patrulhando")
 	await t.frames(240)
 	t.check(absf(walker.global_position.x - start_x) > 5.0, "Patrulha move o inimigo")
-	t.check(ledge_walker.is_on_floor() and absf(ledge_walker.global_position.y - 234.0) < 2.0,
+	t.check(ledge_walker.is_on_floor() and absf(ledge_walker.global_position.y - ledge_top.y) < 2.0,
 			"Patrulha vira na beirada (não cai da plataforma)")
 	ledge_walker.queue_free()
 
 	# Perseguição e ataque (com aviso antes do bote).
 	var states: Array[StringName] = []
 	walker.state_machine.state_changed.connect(func(_from: StringName, to: StringName) -> void: states.append(to))
-	await _place(t, player, walker.global_position + Vector2(90.0, 0.0))
+	# Player à ESQUERDA: a patrulha leva o inimigo para a direita, rumo aos
+	# espinhos, e persegui-lo para lá o mataria antes do teste.
+	await _place(t, player, walker.global_position + Vector2(-120.0, 0.0))
 	# Percepção roda a ~10 Hz: até 0,1 s de "tempo de reação".
-	var is_chasing := func() -> bool: return walker.state_machine.current_state.name == EnemyState.CHASE and walker.velocity.x > 0.0
+	var is_chasing := func() -> bool: return walker.state_machine.current_state.name == EnemyState.CHASE and walker.velocity.x < 0.0
 	t.check(await _wait_for(t, is_chasing, 20), "Ver o player faz o inimigo perseguir")
 	var health_before := player.health.current
 	for i in 150:
@@ -77,7 +88,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	for hit in 3:
 		if not is_instance_valid(walker) or walker.health.is_dead():
 			break
-		await _place(t, player, walker.global_position + Vector2(-16.0, 0.0))
+		await _place(t, player, walker.global_position + Vector2(-MELEE_OFFSET, 0.0))
 		player.face(1.0)
 		await t.tap(Actions.ATTACK)
 		await t.frames(25)
@@ -88,12 +99,12 @@ func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	t.check(not is_instance_valid(walker), "Inimigo morto sai da cena")
 
 	# Times: inimigos não se ferem entre si nem ferem o alvo de treino.
-	await _place(t, player, Vector2(950.0, 280.0))
+	await _place(t, player, _marker(&"FarGround"))
 	var dummy := game.find_child("TrainingDummy", true, false) as Node2D
 	var dummy_health := dummy.get_node("HealthComponent") as HealthComponent
 	dummy_health.revive()
-	var a := _spawn_enemy(game, dummy.global_position + Vector2(-12.0, 0.0))
-	var b := _spawn_enemy(game, dummy.global_position + Vector2(-14.0, 0.0))
+	var a := _spawn_enemy(game, dummy.global_position + Vector2(-24.0, 0.0))
+	var b := _spawn_enemy(game, dummy.global_position + Vector2(-28.0, 0.0))
 	await t.frames(3)
 	a.set_attack_active(true)
 	await t.frames(15)
@@ -108,7 +119,7 @@ func _test_enemies(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 
 func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	# Pulo: estica e solta poeira.
-	await _place(t, player, Vector2(150.0, 280.0))
+	await _place(t, player, _marker(&"OpenGround"))
 	t.spawned_effects.clear()
 	await t.tap(Actions.JUMP)
 	t.check(await _wait_for(t, func() -> bool: return player.squash.scale.y > 1.05),
@@ -117,7 +128,7 @@ func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 	await t.frames(80)
 
 	# Aterrissagem de uma queda alta: achata proporcional ao impacto.
-	await _place(t, player, Vector2(150.0, 100.0))
+	await _place(t, player, _marker(&"SkyDrop"))
 	for i in 120:
 		await t.frames(1)
 		if player.is_on_floor():
@@ -131,7 +142,7 @@ func _test_game_feel(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 	# Golpe acertando: hitstop + faíscas + flash no alvo.
 	var dummy := game.find_child("TrainingDummy", true, false) as Node2D
 	var dummy_flash := dummy.get_node("HitFlash") as HitFlashComponent
-	await _place(t, player, dummy.global_position + Vector2(-16.0, 0.0))
+	await _place(t, player, dummy.global_position + Vector2(-MELEE_OFFSET, 0.0))
 	player.face(1.0)
 	t.spawned_effects.clear()
 	var hitstops_before := t.hitstop_count
@@ -185,7 +196,7 @@ func _test_attacks(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	var dummy_health := dummy.get_node("HealthComponent") as HealthComponent
 
 	# Ataque lateral.
-	await _place(t, player, dummy.global_position + Vector2(-16.0, 0.0))
+	await _place(t, player, dummy.global_position + Vector2(-MELEE_OFFSET, 0.0))
 	player.face(1.0)
 	var before := dummy_health.current
 	await t.tap(Actions.ATTACK)
@@ -205,7 +216,7 @@ func _test_attacks(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	await t.frames(30)
 
 	# Pogo: ataque para baixo no ar acertando o alvo quica o player.
-	await _place(t, player, dummy.global_position + Vector2(0.0, -28.0))
+	await _place(t, player, dummy.global_position + Vector2(0.0, -50.0))
 	before = dummy_health.current
 	Input.action_press(Actions.MOVE_DOWN)
 	await t.tap(Actions.ATTACK)
@@ -217,7 +228,7 @@ func _test_attacks(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 
 
 func _test_dash(t: SmokeTest, player: PlatformerPlayer) -> void:
-	await _place(t, player, Vector2(150.0, 280.0))
+	await _place(t, player, _marker(&"OpenGround"))
 	player.face(1.0)
 	var start_x := player.global_position.x
 	await t.tap(Actions.DASH)
@@ -229,7 +240,7 @@ func _test_dash(t: SmokeTest, player: PlatformerPlayer) -> void:
 	await t.frames(30)
 
 	# Dash no ar: sem gravidade durante o dash e só 1 por pulo.
-	await _place(t, player, Vector2(150.0, 150.0))
+	await _place(t, player, _marker(&"SkyDrop"))
 	await t.tap(Actions.DASH)
 	await t.frames(2)
 	var dash_y := player.global_position.y
@@ -242,7 +253,7 @@ func _test_dash(t: SmokeTest, player: PlatformerPlayer) -> void:
 
 func _test_abilities(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void:
 	t.check(not player.has_ability(PlatformerPlayer.ABILITY_DOUBLE_JUMP), "Pulo duplo começa bloqueado")
-	await _place(t, player, Vector2(150.0, 280.0))
+	await _place(t, player, _marker(&"OpenGround"))
 	t.check(not await _try_double_jump(t, player), "Sem a habilidade, não há pulo duplo")
 
 	var pickup := game.find_child("DoubleJumpPickup", true, false)
@@ -258,7 +269,7 @@ func _test_abilities(t: SmokeTest, game: Game, player: PlatformerPlayer) -> void
 	t.check(await _try_double_jump(t, player), "Com a habilidade, o pulo duplo funciona")
 
 	player.lock_ability(PlatformerPlayer.ABILITY_DASH)
-	await _place(t, player, Vector2(150.0, 280.0))
+	await _place(t, player, _marker(&"OpenGround"))
 	await t.tap(Actions.DASH)
 	await t.frames(2)
 	t.check(player.state_machine.current_state.name != PlatformerState.DASH, "Habilidade bloqueada não é usada")
@@ -277,6 +288,14 @@ func _try_double_jump(t: SmokeTest, player: PlatformerPlayer) -> bool:
 	var jumped := player.velocity.y < 0.0
 	await t.frames(80)
 	return jumped
+
+
+func _marker(marker_name: StringName) -> Vector2:
+	var marker := _markers.get_node_or_null(NodePath(marker_name)) as Node2D if _markers != null else null
+	if marker == null:
+		push_error("Marcador de teste ausente: %s" % marker_name)
+		return Vector2.ZERO
+	return marker.global_position
 
 
 func _place(t: SmokeTest, player: PlatformerPlayer, position: Vector2) -> void:

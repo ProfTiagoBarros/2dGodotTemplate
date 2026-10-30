@@ -10,10 +10,13 @@ extends PlayerCharacter
 const ABILITY_ATTACK := &"attack"
 const ABILITY_DASH := &"dash"
 const ABILITY_DOUBLE_JUMP := &"double_jump"
+## Animações do golpe para cima/baixo (o lateral usa o nome do estado, "attack").
+const ANIM_ATTACK_UP := &"attack_up"
+const ANIM_ATTACK_DOWN := &"attack_down"
 
 @export var stats: PlatformerStats
 ## Empurrão ao levar dano: x = para longe da fonte, y = para cima (negativo).
-@export var knockback := Vector2(160.0, -180.0)
+@export var knockback := Vector2(300.0, -280.0)
 
 var coyote_timer := 0.0
 var jump_buffer_timer := 0.0
@@ -70,6 +73,16 @@ func _on_hit_landed(_hurtbox: HurtboxComponent) -> void:
 	if attack_direction == Vector2.DOWN:
 		velocity.y = -stats.pogo_velocity
 		_refill_air_resources()
+
+
+## O golpe tem uma animação por direção (attack, attack_up, attack_down).
+func animation_for_state(state: StringName) -> StringName:
+	if state == PlatformerState.ATTACK:
+		if attack_direction == Vector2.UP:
+			return ANIM_ATTACK_UP
+		if attack_direction == Vector2.DOWN:
+			return ANIM_ATTACK_DOWN
+	return super.animation_for_state(state)
 
 #endregion
 

@@ -17,6 +17,11 @@ extends CharacterBody2D
 ##
 ## Cena esperada: Visual/Squash, HealthComponent, StateMachine,
 ## AttackPivot/AttackHitbox/CollisionShape2D.
+##
+## Animação (opcional): com um AnimatedSprite2D em Visual/Squash/Sprite, cada
+## estado da StateMachine toca a animação de mesmo nome em snake_case ("Idle"
+## -> "idle"). Personagens que variam por contexto (direção do golpe, direção
+## do olhar) sobrescrevem animation_for_state().
 
 @export_group("Game feel")
 ## Tremor de tela quando ESTE personagem leva dano (0 = nenhum).
@@ -37,6 +42,7 @@ var _attacking := false
 @onready var attack_pivot: Node2D = $AttackPivot
 @onready var attack_hitbox: HitboxComponent = $AttackPivot/AttackHitbox
 @onready var _attack_shape: CollisionShape2D = $AttackPivot/AttackHitbox/CollisionShape2D
+@onready var sprite: AnimatedSprite2D = get_node_or_null(^"Visual/Squash/Sprite") as AnimatedSprite2D
 
 
 func _ready() -> void:
@@ -44,6 +50,10 @@ func _ready() -> void:
 	health.died.connect(_on_died)
 	attack_hitbox.hit_landed.connect(_on_attack_landed)
 	set_attack_active(false)
+	if sprite != null:
+		state_machine.state_changed.connect(_on_state_changed)
+		# O estado inicial entra depois do _ready (a StateMachine espera o dono).
+		refresh_animation.call_deferred()
 
 
 #region Ganchos (implementados por cada personagem)
@@ -70,6 +80,11 @@ func _on_hurt(_amount: int, _source: Node) -> void:
 func _on_hit_landed(_hurtbox: HurtboxComponent) -> void:
 	pass
 
+
+## Animação do `sprite` para o estado `state` (padrão: nome em snake_case).
+func animation_for_state(state: StringName) -> StringName:
+	return StringName(String(state).to_snake_case())
+
 #endregion
 
 
@@ -84,6 +99,21 @@ func set_attack_active(active: bool) -> void:
 	_attacking = active
 	_attack_shape.set_deferred(&"disabled", not active)
 	attack_hitbox.visible = active
+
+
+## Atualiza a animação sem reiniciá-la (ex.: o olhar mudou de direção no meio
+## de uma caminhada): troca o clipe e mantém o quadro, para o passo não "pular".
+func refresh_animation() -> void:
+	if sprite == null or state_machine.current_state == null:
+		return
+	var anim := animation_for_state(state_machine.current_state.name)
+	if anim == sprite.animation or not sprite.sprite_frames.has_animation(anim):
+		return
+	var frame := sprite.frame
+	var progress := sprite.frame_progress
+	sprite.play(anim)
+	if frame < sprite.sprite_frames.get_frame_count(anim):
+		sprite.set_frame_and_progress(frame, progress)
 
 
 ## Direção unitária para longe de `source`. Usa `fallback` se a fonte não tiver
@@ -112,6 +142,14 @@ func _on_attack_landed(hurtbox: HurtboxComponent) -> void:
 	GameFeel.hitstop(hit_hitstop)
 	GameFeel.spawn_effect(GameFeel.HIT_SPARKS, _attack_shape.global_position)
 	_on_hit_landed(hurtbox)
+
+
+func _on_state_changed(_from: StringName, to: StringName) -> void:
+	# Estado novo sempre começa a animação do início (ex.: dois golpes seguidos).
+	var anim := animation_for_state(to)
+	if sprite.sprite_frames.has_animation(anim):
+		sprite.stop()
+		sprite.play(anim)
 
 
 func _on_died() -> void:

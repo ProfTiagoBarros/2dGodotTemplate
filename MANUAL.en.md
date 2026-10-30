@@ -202,31 +202,39 @@ The examples are useful while you learn the template. Once the game has its own 
 
 ### 5.1 Replacing the character art
 
-Characters use this structure:
+The template's characters (the hero, the android and the slime) were generated with **PixelLab** (pixellab.ai) in the *Template Chronicles* theme. The player is **32×48** px in the platformer and **32×32** in top-down. They all follow this structure:
 
 ```
 Player
-└─ Visual          ← turns left/right (scale.x = ±1)
+└─ Visual          ← flips sideways (scale.x = ±1)
    ├─ Shadow       ← (top-down) stays outside Squash
-   └─ Squash       ← deforms (squash & stretch) and flashes on damage
-      ├─ Body      ← replace these polygons with your art
-      └─ Eye
+   └─ Squash       ← deforms (squash & stretch) and flashes when hurt
+      └─ Sprite    ← AnimatedSprite2D with the animations
 ```
 
-1. Delete `Body` and `Eye` and add a `Sprite2D` or `AnimatedSprite2D` **inside `Squash`**.
-2. Position the art with the **feet at the origin** (0, 0). That way squash keeps the feet on the ground and top-down Y-sorting works.
-3. For animations, start each one in the matching state's `enter()`:
+**Animation follows the state on its own.** The `Character` class plays on `Sprite` the animation named after the state in lowercase: the `Idle` state plays `idle`, `Run` plays `run`, `Attack` plays `attack`. You don't need to write code in the states. The special cases:
 
-```gdscript
-# platformer_player.gd
-@onready var sprite: AnimatedSprite2D = $Visual/Squash/Sprite
+| Character | Expected animations |
+|---|---|
+| Platformer | `idle`, `run`, `jump`, `fall`, `attack`, `attack_up`, `attack_down`, `dash` |
+| Top-down | the same per direction: `idle_south`, `walk_east`, `attack_north_east`… (south, south-east, east, north-east and north; the west side is the east one mirrored) |
+| Enemies | `walk` (patrol and chase), `idle` (windup and recovery), `attack`, `hurt` |
 
-# states/run_state.gd
-func enter(_previous: StringName, _data: Dictionary = {}) -> void:
-	player.sprite.play(&"run")
-```
+A missing animation is simply skipped: the slime only has `idle` and works that way.
 
-> To import straight from **Aseprite**, the *Aseprite Wizard* addon generates `SpriteFrames` from `.aseprite` files.
+**To use your own character:**
+
+1. Generate or draw the animations. In PixelLab, create the character at game size and animate only the east direction for the platformer (or 5 directions for top-down); download each animation's frames into its own folder (`idle/0.png`, `idle/1.png`…). From Aseprite, export each tag as separate frames.
+2. Import everything at once:
+   ```bash
+   godot --headless --path . -s res://tools/import_frames.gd -- C:/my_animations res://game/platformer/player/art hero
+   ```
+   The script builds one PNG strip per animation and `hero_frames.tres` (a `SpriteFrames`). Attacks, jump and dash are imported without looping.
+3. Tune each animation's speed by opening the `.tres` in the editor (SpriteFrames panel).
+4. On `Sprite`, set `offset` so **the feet are at the origin** (0, 0): squash keeps the feet on the ground and top-down Y-sort works. PixelLab frames come centered, so a single `offset` works for every animation.
+5. Adjust the collision, hurtbox and attack hitbox to the new art's size.
+
+> To import straight from **Aseprite**, the *Aseprite Wizard* addon also builds `SpriteFrames` from the `.aseprite` file.
 
 ### 5.2 Tuning movement without touching code
 
@@ -244,14 +252,33 @@ The platformer jump is defined in design terms: **height in pixels** (`jump_heig
 
 ### 5.3 Creating levels
 
-1. Duplicate your genre's example level and rename it.
-2. On the level's root node (script `level.gd`), check in the Inspector:
-   - `level_id`: unique identifier (e.g. `&"cave_01"`).
-   - `music`: the level's music, played with crossfade.
-   - `touch_actions`: what touch buttons A, B and C do.
-   - `hud_hint_actions`: which button prompts appear on screen. In a tutorial level, show only what has been taught so far.
-3. For prototyping, use `SolidBlock` blocks (greybox). When the art arrives, replace them with `TileMapLayer`.
-4. To quickly test a level: **F1** → `level level_name`.
+The example levels use **PixelLab tilesets** with automatic corner-based autotiling: a cyberpunk rooftop in the platformer and a wet street with metal sidewalks in top-down.
+
+**How to paint the scenery:** each level has two tile layers.
+
+| Layer | What it is |
+|---|---|
+| `Terrain` (platformer) / `Ground` (top-down) | **Logic** layer: you paint here. It holds the collision (in the platformer) and shows semi-transparent in the editor |
+| `TerrainArt` / `GroundArt` | **Visual** layer (`DualGridTerrain`): picks each edge and corner tile on its own from what you painted |
+
+1. Select the logic layer and, in the **TileMap** panel, paint with the cyan tile ("upper" terrain: block in the platformer, sidewalk in top-down). In top-down, paint the street with the dark blue tile.
+2. The visual layer updates itself in the editor.
+
+**To swap the tileset:** generate a new one in PixelLab (*sidescroller tileset* for the platformer, *top-down tileset* for top-down) and replace the PNG in `game/<genre>/levels/tiles/`. The order of the 16 tiles in PixelLab sheets is always the same. In PixelLab sidescroller tilesets the block is the "lower" terrain, which is why the platformer's visual layer uses `painted_is_lower = true`.
+
+**Level settings** (root node, `level.gd` script):
+- `level_id`: unique identifier (e.g. `&"cave_01"`).
+- `music`: the level's music, played with a crossfade.
+- `touch_actions`: what touch buttons A, B and C do.
+- `hud_hint_actions`: which button prompts show on screen. In a tutorial level, show only what was already taught.
+- `camera_limits`: the area the camera may show, so it never leaves the scenery.
+
+**More details:**
+- **Background:** the platformer uses a `Parallax2D` with `assets/ui/menu_background.png`, which scrolls slowly.
+- **Decoration:** lamps, crates, terminals and vending machines live in `game/world/decor/`.
+- **Test markers:** the `TestMarkers` node holds positions used by the automated tests (open ground, platform top…). When you redesign the level, move the markers with it and the smoke test keeps working.
+- **Greybox:** for prototyping without art, the `SolidBlock` blocks are still available.
+- **Testing a level quickly:** **F1** → `level level_name`.
 
 In top-down, put characters, enemies and tall objects inside the `Entities` node, which has Y-sort. Things on the floor (rugs, spikes) go in `FloorDecals`.
 
